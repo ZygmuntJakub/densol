@@ -1,0 +1,35 @@
+[package]
+name = "compress_bench"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "compress_bench"
+
+[features]
+default      = ["lz4", "discriminant"]
+lz4          = ["densol/lz4"]
+identity     = ["densol/identity"]
+deflate      = ["densol/deflate"]
+rle          = ["densol/rle"]
+discriminant = ["densol/discriminant"]
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+
+[dependencies]
+anchor-lang         = "0.32.1"
+densol        = { path = "../../crates/densol", default-features = false }
+densol-derive = { path = "../../crates/densol-derive" }
+
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

@@ -1,0 +1,18 @@
+[package]
+name = "compress_tool"
+version = "0.1.0"
+edition = "2021"
+description = "CLI: compress test data with lz4_flex block format (compatible with on-chain program)"
+
+[[bin]]
+name = "compress_tool"
+path = "src/main.rs"
+
+[features]
+default      = ["lz4", "discriminant"]
+lz4          = ["densol/lz4"]
+identity     = ["densol/identity"]
+discriminant = ["densol/discriminant"]
+
+[dependencies]
+densol = { path = "../../crates/densol", default-features = false }

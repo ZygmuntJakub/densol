@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 360" width="700" height="360">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; fill: #444; }
+  .title { font-size: 14px; font-weight: 600; fill: #222; }
+  .axis-label { font-size: 11px; fill: #666; }
+  .tick-label { font-size: 10px; fill: #888; }
+  .legend-label { font-size: 11px; fill: #555; }
+  .grid { stroke: #e8e8e8; stroke-width: 1; }
+  .axis { stroke: #bbb; stroke-width: 1; }
+  .data-label { font-size: 9px; fill: #555; }
+</style>
+<line x1="72" y1="296" x2="676" y2="296" class="grid"/>
+<text x="64" y="300" text-anchor="end" class="tick-label">0</text>
+<line x1="72" y1="245.6" x2="676" y2="245.6" class="grid"/>
+<text x="64" y="249.6" text-anchor="end" class="tick-label">20.0M</text>
+<line x1="72" y1="195.2" x2="676" y2="195.2" class="grid"/>
+<text x="64" y="199.2" text-anchor="end" class="tick-label">40.0M</text>
+<line x1="72" y1="144.8" x2="676" y2="144.8" class="grid"/>
+<text x="64" y="148.8" text-anchor="end" class="tick-label">60.0M</text>
+<line x1="72" y1="94.39999999999998" x2="676" y2="94.39999999999998" class="grid"/>
+<text x="64" y="98.39999999999998" text-anchor="end" class="tick-label">80.0M</text>
+<line x1="72" y1="44" x2="676" y2="44" class="grid"/>
+<text x="64" y="48" text-anchor="end" class="tick-label">100.0M</text>
+<line x1="72" y1="44" x2="72" y2="296" class="axis"/>
+<line x1="72" y1="296" x2="676" y2="296" class="axis"/>
+<text x="115.14285714285714" y="314" text-anchor="middle" class="tick-label">256 B</text>
+<rect x="78.47142857142856" y="292.9832576" width="34.67142857142858" height="3.0167424" fill="#4e79a7" rx="3"/>
+<text x="95.80714285714285" y="288.9832576" text-anchor="middle" class="data-label">1.2M</text>
+<rect x="115.14285714285714" y="294.0882272" width="34.67142857142858" height="1.9117728" fill="#59a14f" rx="3"/>
+<text x="132.47857142857143" y="290.0882272" text-anchor="middle" class="data-label">759K</text>
+<text x="201.42857142857142" y="314" text-anchor="middle" class="tick-label">512 B</text>
+<rect x="164.75714285714284" y="288.5107616" width="34.67142857142858" height="7.4892384000000005" fill="#4e79a7" rx="3"/>
+<text x="182.09285714285713" y="284.5107616" text-anchor="middle" class="data-label">3.0M</text>
+<rect x="201.42857142857142" y="289.6157312" width="34.67142857142858" height="6.3842688" fill="#59a14f" rx="3"/>
+<text x="218.7642857142857" y="285.6157312" text-anchor="middle" class="data-label">2.5M</text>
+<text x="287.7142857142857" y="314" text-anchor="middle" class="tick-label">1 KB</text>
+<rect x="251.04285714285714" y="279.5657696" width="34.67142857142858" height="16.4342304" fill="#4e79a7" rx="3"/>
+<text x="268.37857142857143" y="275.5657696" text-anchor="middle" class="data-label">6.5M</text>
+<rect x="287.7142857142857" y="280.6707392" width="34.67142857142858" height="15.3292608" fill="#59a14f" rx="3"/>
+<text x="305.05" y="276.6707392" text-anchor="middle" class="data-label">6.1M</text>
+<text x="374.00000000000006" y="314" text-anchor="middle" class="tick-label">2 KB</text>
+<rect x="337.3285714285715" y="261.6757856" width="34.67142857142858" height="34.3242144" fill="#4e79a7" rx="3"/>
+<text x="354.66428571428577" y="257.6757856" text-anchor="middle" class="data-label">13.6M</text>
+<rect x="374.00000000000006" y="262.7807552" width="34.67142857142858" height="33.2192448" fill="#59a14f" rx="3"/>
+<text x="391.33571428571435" y="258.7807552" text-anchor="middle" class="data-label">13.2M</text>
+<text x="460.28571428571433" y="314" text-anchor="middle" class="tick-label">4 KB</text>
+<rect x="423.61428571428576" y="225.8958176" width="34.67142857142858" height="70.10418240000001" fill="#4e79a7" rx="3"/>
+<text x="440.95000000000005" y="221.8958176" text-anchor="middle" class="data-label">27.8M</text>
+<rect x="460.28571428571433" y="227.0007872" width="34.67142857142858" height="68.9992128" fill="#59a14f" rx="3"/>
+<text x="477.6214285714286" y="223.0007872" text-anchor="middle" class="data-label">27.4M</text>
+<text x="546.5714285714286" y="314" text-anchor="middle" class="tick-label">8 KB</text>
+<rect x="509.90000000000003" y="154.3358816" width="34.67142857142858" height="141.6641184" fill="#4e79a7" rx="3"/>
+<text x="527.2357142857143" y="150.3358816" text-anchor="middle" class="data-label">56.2M</text>
+<rect x="546.5714285714287" y="155.4408512" width="34.67142857142858" height="140.5591488" fill="#59a14f" rx="3"/>
+<text x="563.907142857143" y="151.4408512" text-anchor="middle" class="data-label">55.8M</text>
+<text x="632.8571428571429" y="314" text-anchor="middle" class="tick-label">10 KB</text>
+<rect x="596.1857142857143" y="118.5559136" width="34.67142857142858" height="177.4440864" fill="#4e79a7" rx="3"/>
+<text x="613.5214285714286" y="114.5559136" text-anchor="middle" class="data-label">70.4M</text>
+<rect x="632.8571428571429" y="119.6608832" width="34.67142857142858" height="176.3391168" fill="#59a14f" rx="3"/>
+<text x="650.1928571428572" y="115.6608832" text-anchor="middle" class="data-label">70.0M</text>
+<rect x="72" y="339" width="12" height="12" fill="#4e79a7" rx="2"/>
+<text x="88" y="349" text-anchor="start" class="legend-label">repetitive</text>
+<rect x="172" y="339" width="12" height="12" fill="#59a14f" rx="2"/>
+<text x="188" y="349" text-anchor="start" class="legend-label">json-like</text>
+<text x="350" y="24" text-anchor="middle" class="title">Rent Savings per Account</text>
+<text x="14" y="170" text-anchor="middle" class="axis-label" transform="rotate(-90,14,170)">Rent saved (µLamports)</text>
+</svg>
