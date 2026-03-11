@@ -1,0 +1,322 @@
+{
+  "timestamp": "2026-03-11T18:31:52.723Z",
+  "config": {
+    "priorityFeeUlamports": 1000
+  },
+  "write": [
+    {
+      "label": "repetitive",
+      "size": 256,
+      "compSize": 84,
+      "ratio": "3.05",
+      "storeRawCu": 4840,
+      "storeCompCu": 9800,
+      "rentSaving": 1197120
+    },
+    {
+      "label": "repetitive",
+      "size": 512,
+      "compSize": 85,
+      "ratio": "6.02",
+      "storeRawCu": 4840,
+      "storeCompCu": 10277,
+      "rentSaving": 2971920
+    },
+    {
+      "label": "repetitive",
+      "size": 800,
+      "compSize": 86,
+      "ratio": "9.30",
+      "storeRawCu": 4840,
+      "storeCompCu": 10852,
+      "rentSaving": 4969440
+    },
+    {
+      "label": "json-like",
+      "size": 256,
+      "compSize": 147,
+      "ratio": "1.74",
+      "storeRawCu": 4840,
+      "storeCompCu": 13473,
+      "rentSaving": 758640
+    },
+    {
+      "label": "json-like",
+      "size": 512,
+      "compSize": 148,
+      "ratio": "3.46",
+      "storeRawCu": 4840,
+      "storeCompCu": 14018,
+      "rentSaving": 2533440
+    },
+    {
+      "label": "json-like",
+      "size": 800,
+      "compSize": 149,
+      "ratio": "5.37",
+      "storeRawCu": 4840,
+      "storeCompCu": 14593,
+      "rentSaving": 4530960
+    },
+    {
+      "label": "random",
+      "size": 256,
+      "compSize": 263,
+      "ratio": "0.97",
+      "storeRawCu": 4840,
+      "storeCompCu": 11990,
+      "rentSaving": -48720
+    },
+    {
+      "label": "random",
+      "size": 512,
+      "compSize": 520,
+      "ratio": "0.98",
+      "storeRawCu": 4840,
+      "storeCompCu": 14630,
+      "rentSaving": -55680
+    },
+    {
+      "label": "random",
+      "size": 800,
+      "compSize": 810,
+      "ratio": "0.99",
+      "storeRawCu": 4840,
+      "storeCompCu": 16825,
+      "rentSaving": -69600
+    }
+  ],
+  "read": [
+    {
+      "label": "repetitive",
+      "size": 256,
+      "compSize": 84,
+      "ratio": "3.05",
+      "readRawCu": 4021,
+      "readCompCu": 5471,
+      "readOverhead": 1450,
+      "rentSaving": 1197120,
+      "breakEven": "825,600"
+    },
+    {
+      "label": "repetitive",
+      "size": 512,
+      "compSize": 85,
+      "ratio": "6.02",
+      "readRawCu": 6581,
+      "readCompCu": 9450,
+      "readOverhead": 2869,
+      "rentSaving": 2971920,
+      "breakEven": "1,035,873"
+    },
+    {
+      "label": "repetitive",
+      "size": 1024,
+      "compSize": 87,
+      "ratio": "11.77",
+      "readRawCu": 11705,
+      "readCompCu": 17412,
+      "readOverhead": 5707,
+      "rentSaving": 6521520,
+      "breakEven": "1,142,723"
+    },
+    {
+      "label": "repetitive",
+      "size": 2048,
+      "compSize": 91,
+      "ratio": "22.51",
+      "readRawCu": 21949,
+      "readCompCu": 33332,
+      "readOverhead": 11383,
+      "rentSaving": 13620720,
+      "breakEven": "1,196,584"
+    },
+    {
+      "label": "repetitive",
+      "size": 4096,
+      "compSize": 99,
+      "ratio": "41.37",
+      "readRawCu": 42441,
+      "readCompCu": 65164,
+      "readOverhead": 22723,
+      "rentSaving": 27819120,
+      "breakEven": "1,224,271"
+    },
+    {
+      "label": "repetitive",
+      "size": 8192,
+      "compSize": 115,
+      "ratio": "71.23",
+      "readRawCu": 83433,
+      "readCompCu": 128839,
+      "readOverhead": 45406,
+      "rentSaving": 56215920,
+      "breakEven": "1,238,073"
+    },
+    {
+      "label": "repetitive",
+      "size": 10240,
+      "compSize": 123,
+      "ratio": "83.25",
+      "readRawCu": 103940,
+      "readCompCu": 160682,
+      "readOverhead": 56742,
+      "rentSaving": 70414320,
+      "breakEven": "1,240,956"
+    },
+    {
+      "label": "json-like",
+      "size": 256,
+      "compSize": 147,
+      "ratio": "1.74",
+      "readRawCu": 4021,
+      "readCompCu": 5455,
+      "readOverhead": 1434,
+      "rentSaving": 758640,
+      "breakEven": "529,038"
+    },
+    {
+      "label": "json-like",
+      "size": 512,
+      "compSize": 148,
+      "ratio": "3.46",
+      "readRawCu": 6581,
+      "readCompCu": 9433,
+      "readOverhead": 2852,
+      "rentSaving": 2533440,
+      "breakEven": "888,303"
+    },
+    {
+      "label": "json-like",
+      "size": 1024,
+      "compSize": 150,
+      "ratio": "6.83",
+      "readRawCu": 11705,
+      "readCompCu": 17395,
+      "readOverhead": 5690,
+      "rentSaving": 6083040,
+      "breakEven": "1,069,076"
+    },
+    {
+      "label": "json-like",
+      "size": 2048,
+      "compSize": 154,
+      "ratio": "13.30",
+      "readRawCu": 21949,
+      "readCompCu": 33315,
+      "readOverhead": 11366,
+      "rentSaving": 13182240,
+      "breakEven": "1,159,796"
+    },
+    {
+      "label": "json-like",
+      "size": 4096,
+      "compSize": 162,
+      "ratio": "25.28",
+      "readRawCu": 42441,
+      "readCompCu": 65147,
+      "readOverhead": 22706,
+      "rentSaving": 27380640,
+      "breakEven": "1,205,877"
+    },
+    {
+      "label": "json-like",
+      "size": 8192,
+      "compSize": 178,
+      "ratio": "46.02",
+      "readRawCu": 83433,
+      "readCompCu": 128811,
+      "readOverhead": 45378,
+      "rentSaving": 55777440,
+      "breakEven": "1,229,174"
+    },
+    {
+      "label": "json-like",
+      "size": 10240,
+      "compSize": 186,
+      "ratio": "55.05",
+      "readRawCu": 103940,
+      "readCompCu": 160654,
+      "readOverhead": 56714,
+      "rentSaving": 69975840,
+      "breakEven": "1,233,837"
+    },
+    {
+      "label": "random",
+      "size": 256,
+      "compSize": 263,
+      "ratio": "0.97",
+      "readRawCu": 4021,
+      "readCompCu": 4480,
+      "readOverhead": 459,
+      "rentSaving": -48720,
+      "breakEven": "harmful"
+    },
+    {
+      "label": "random",
+      "size": 512,
+      "compSize": 520,
+      "ratio": "0.98",
+      "readRawCu": 6581,
+      "readCompCu": 7163,
+      "readOverhead": 582,
+      "rentSaving": -55680,
+      "breakEven": "harmful"
+    },
+    {
+      "label": "random",
+      "size": 1024,
+      "compSize": 1034,
+      "ratio": "0.99",
+      "readRawCu": 11709,
+      "readCompCu": 12541,
+      "readOverhead": 832,
+      "rentSaving": -69600,
+      "breakEven": "harmful"
+    },
+    {
+      "label": "random",
+      "size": 2048,
+      "compSize": 2062,
+      "ratio": "0.99",
+      "readRawCu": 21949,
+      "readCompCu": 23273,
+      "readOverhead": 1324,
+      "rentSaving": -97440,
+      "breakEven": "harmful"
+    },
+    {
+      "label": "random",
+      "size": 4096,
+      "compSize": 4119,
+      "ratio": "0.99",
+      "readRawCu": 42441,
+      "readCompCu": 44760,
+      "readOverhead": 2319,
+      "rentSaving": -160080,
+      "breakEven": "harmful"
+    },
+    {
+      "label": "random",
+      "size": 8192,
+      "compSize": 8192,
+      "ratio": "1.00",
+      "readRawCu": 83444,
+      "readCompCu": null,
+      "readOverhead": null,
+      "rentSaving": 0,
+      "breakEven": "OOM"
+    },
+    {
+      "label": "random",
+      "size": 10240,
+      "compSize": 10240,
+      "ratio": "1.00",
+      "readRawCu": 103951,
+      "readCompCu": null,
+      "readOverhead": null,
+      "rentSaving": 0,
+      "breakEven": "OOM"
+    }
+  ]
+}

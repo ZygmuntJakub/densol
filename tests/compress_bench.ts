@@ -6,16 +6,16 @@ import { strict as assert } from "node:assert";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-// ── Config ─────────────────────────────────────────────────────────────────────
+// ── Config ──────────────────────────────────────────────────────────────────
 
-const SIZES = [256, 512, 1024, 2048, 4096, 8192, 10240];
+const WRITE_SIZES = [256, 512, 800];
+const READ_SIZES = [256, 512, 1024, 2048, 4096, 8192, 10240];
 const CHUNK_SIZE = 800;
 const MAX_CU = 1_400_000;
-const PRIORITY_FEE_ULAMPORTS = 1_000; // µlamports/CU — break-even reference
+const PRIORITY_FEE_ULAMPORTS = 1_000;
 
-// ── Data generators ────────────────────────────────────────────────────────────
+// ── Data generators ─────────────────────────────────────────────────────────
 
-/** Highly repetitive ASCII — best-case compression (~80x). */
 function repetitive(size: number): Buffer {
   const pattern = Buffer.from(
     "Hello Solana! This is benchmark metadata for on-chain compression. "
@@ -25,7 +25,6 @@ function repetitive(size: number): Buffer {
   return out;
 }
 
-/** JSON-like structured data — realistic NFT metadata (~2–55x). */
 function jsonLike(size: number): Buffer {
   const pattern = Buffer.from(
     '{"name":"MyToken","symbol":"MTK","uri":"https://arweave.net/abc","seller_fee":500,"creators":[{"address":"So11111111111111111111111111111111111111112","share":100}]}'
@@ -35,7 +34,6 @@ function jsonLike(size: number): Buffer {
   return out;
 }
 
-/** LCG pseudo-random bytes — worst-case, incompressible (~1x). */
 function pseudoRandom(size: number): Buffer {
   let s = 0xdeadbeef;
   const out = Buffer.allocUnsafe(size);
@@ -46,15 +44,15 @@ function pseudoRandom(size: number): Buffer {
   return out;
 }
 
-// ── Account helpers ────────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-async function setupStore(
+const accountSpace = (n: number) => 8 + 4 + n;
+
+async function createStore(
   program: Program<CompressBench>,
-  provider: anchor.AnchorProvider,
-  payload: Buffer
+  provider: anchor.AnchorProvider
 ): Promise<Keypair> {
   const kp = Keypair.generate();
-
   await program.methods
     .initStore()
     .accounts({
@@ -64,24 +62,49 @@ async function setupStore(
     })
     .signers([kp])
     .rpc();
-
-  for (let offset = 0; offset < payload.length; offset += CHUNK_SIZE) {
-    const chunk = payload.slice(offset, Math.min(offset + CHUNK_SIZE, payload.length));
-    await program.methods
-      .appendChunk(chunk)
-      .accounts({
-        store: kp.publicKey,
-        authority: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-  }
-
   return kp;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function simulateWithLogs(builder: any): Promise<{ cu: number | null; logs: string[] }> {
+async function uploadChunked(
+  program: Program<CompressBench>,
+  provider: anchor.AnchorProvider,
+  store: Keypair,
+  data: Buffer
+): Promise<void> {
+  for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
+    const chunk = data.slice(offset, Math.min(offset + CHUNK_SIZE, data.length));
+    await program.methods
+      .storeRaw(chunk)
+      .accounts({
+        store: store.publicKey,
+        payer: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
+      .rpc();
+  }
+}
+
+async function realTxCu(
+  provider: anchor.AnchorProvider,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  builder: any
+): Promise<number | null> {
+  const sig = await builder
+    .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
+    .rpc();
+  await provider.connection.confirmTransaction(sig, "confirmed");
+  const tx = await provider.connection.getTransaction(sig, {
+    maxSupportedTransactionVersion: 0,
+    commitment: "confirmed",
+  });
+  return tx?.meta?.computeUnitsConsumed ?? null;
+}
+
+async function simulateWithLogs(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  builder: any
+): Promise<{ cu: number | null; logs: string[] }> {
   const result = await builder
     .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
     .simulate();
@@ -89,14 +112,12 @@ async function simulateWithLogs(builder: any): Promise<{ cu: number | null; logs
   let cu: number | null = null;
   for (let i = logs.length - 1; i >= 0; i--) {
     const m = logs[i].match(/consumed (\d+) of \d+ compute units/);
-    if (m) { cu = parseInt(m[1], 10); break; }
+    if (m) {
+      cu = parseInt(m[1], 10);
+      break;
+    }
   }
   return { cu, logs };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function simulateCu(builder: any): Promise<number | null> {
-  return (await simulateWithLogs(builder)).cu;
 }
 
 function parseChecksum(logs: string[]): bigint | null {
@@ -107,250 +128,368 @@ function parseChecksum(logs: string[]): bigint | null {
   return null;
 }
 
-const accountSpace = (n: number) => 8 + 4 + n; // disc + Borsh Vec prefix + data
+// ── Types ───────────────────────────────────────────────────────────────────
 
-// ── Benchmark suite ────────────────────────────────────────────────────────────
+type WriteRow = {
+  label: string;
+  size: number;
+  compSize: number;
+  ratio: string;
+  storeRawCu: number | null;
+  storeCompCu: number | null;
+  writeOverhead: number | null;
+  rentSaving: number;
+  breakEven: string;
+};
+
+type ReadRow = {
+  label: string;
+  size: number;
+  compSize: number;
+  ratio: string;
+  readRawCu: number | null;
+  readCompCu: number | null;
+  readOverhead: number | null;
+  rentSaving: number;
+  breakEven: string;
+};
+
+// ── Benchmark suite ─────────────────────────────────────────────────────────
 
 describe("compress_bench", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const program = anchor.workspace.CompressBench as Program<CompressBench>;
 
-  type Row = {
-    label: string;
-    size: number;
-    compSize: number;
-    ratio: string;
-    // Total CU (Borsh overhead included)
-    borshRawCu: number | null;    // deser(N) — raw account floor
-    borshCompCu: number | null;   // deser(M) — compressed account floor
-    rawCu: number | null;         // Case A read:  borsh(N) + checksum(N)
-    writeCompCu: number | null;   // Case B write: borsh(N) + compress(N→M) + realloc
-    decompCu: number | null;      // Case B read:  borsh(M) + decompress(M→N) + checksum(N)
-    // Net CU (Borsh overhead subtracted — algorithm cost only)
-    netRawCu: number | null;      // checksum(N)
-    netWriteCompCu: number | null;// compress(N→M) + realloc overhead
-    netDecompCu: number | null;   // decompress(M→N) + checksum(N)
-    rentSavings: number;
-    breakEven: string;
-  };
-  const results: Row[] = [];
+  const writeResults: WriteRow[] = [];
+  const readResults: ReadRow[] = [];
 
   const datasets: Array<{ label: string; gen: (n: number) => Buffer }> = [
-    { label: "repetitive", gen: repetitive  },
-    { label: "json-like",  gen: jsonLike    },
-    { label: "random",     gen: pseudoRandom },
+    { label: "repetitive", gen: repetitive },
+    { label: "json-like", gen: jsonLike },
+    { label: "random", gen: pseudoRandom },
   ];
 
-  datasets.forEach(({ label, gen }) => {
-    SIZES.forEach((size) => {
-      it(`[${label}] ${size}B`, async function () {
-        this.timeout(120_000);
+  // ── Write benchmarks (tx-limited sizes) ─────────────────────────────────
 
-        const raw = gen(size);
+  describe("WRITE (tx-limited)", () => {
+    datasets.forEach(({ label, gen }) => {
+      WRITE_SIZES.forEach((size) => {
+        it(`[${label}] ${size}B`, async function () {
+          this.timeout(120_000);
+          const data = gen(size);
 
-        // ── Phase 1: setup both stores + raw rent in parallel ────────────
-        // rawStore  → stays raw for Case A (no compression)
-        // compStore → will be compressed on-chain for Case B
-        const [rawStore, compStore, rentRaw] = await Promise.all([
-          setupStore(program, provider, raw),
-          setupStore(program, provider, raw),
-          provider.connection.getMinimumBalanceForRentExemption(accountSpace(size)),
-        ]);
+          const [rawStore, compStore, rentRaw] = await Promise.all([
+            createStore(program, provider),
+            createStore(program, provider),
+            provider.connection.getMinimumBalanceForRentExemption(accountSpace(size)),
+          ]);
 
-        // ── Phase 2: compress compStore on-chain + measure real write CU ─
-        // Using .rpc() + getTransaction() instead of .simulate() because
-        // Anchor simulation is unreliable for realloc on large accounts (≥8KB).
-        let writeCompCu: number | null = null;
-        let compSize = size;
-        let rentComp = rentRaw;
-        let compressOom = false;
-
-        try {
-          const compressSig = await program.methods
-            .compressStored()
-            .accounts({
-              store: compStore.publicKey,
+          const storeRawCu = await realTxCu(
+            provider,
+            program.methods.storeRaw(data).accounts({
+              store: rawStore.publicKey,
               payer: provider.wallet.publicKey,
               systemProgram: SystemProgram.programId,
             })
-            .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
-            .rpc();
-
-          await provider.connection.confirmTransaction(compressSig, "confirmed");
-          const compressTx = await provider.connection.getTransaction(compressSig, {
-            maxSupportedTransactionVersion: 0,
-            commitment: "confirmed",
-          });
-          writeCompCu = compressTx?.meta?.computeUnitsConsumed ?? null;
-
-          const compAccount = await program.account.dataStore.fetch(compStore.publicKey);
-          compSize = (compAccount.data as Buffer).length;
-          rentComp = await provider.connection.getMinimumBalanceForRentExemption(
-            accountSpace(compSize)
           );
-        } catch (e: any) {
-          const msg = e.message ?? "";
-          const logs: string[] = e.logs ?? e.simulationResponse?.logs ?? [];
-          if (msg.includes("out of memory") || logs.some((l: string) => l.includes("out of memory"))) {
-            compressOom = true;
-          } else {
-            throw e;
+
+          let storeCompCu: number | null = null;
+          let compSize = size;
+          let rentComp = rentRaw;
+
+          try {
+            storeCompCu = await realTxCu(
+              provider,
+              program.methods.storeCompressed(data).accounts({
+                store: compStore.publicKey,
+                payer: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+              })
+            );
+
+            const compAccount = await program.account.dataStore.fetch(
+              compStore.publicKey
+            );
+            compSize = (compAccount.data as Buffer).length;
+            rentComp =
+              await provider.connection.getMinimumBalanceForRentExemption(
+                accountSpace(compSize)
+              );
+          } catch (e: any) {
+            const msg = e.message ?? "";
+            const logs: string[] =
+              e.logs ?? e.simulationResponse?.logs ?? [];
+            if (
+              msg.includes("out of memory") ||
+              logs.some((l: string) => l.includes("out of memory"))
+            ) {
+              storeCompCu = null;
+            } else {
+              throw e;
+            }
           }
-        }
 
-        // ── Phase 5: all read simulations in parallel ─────────────────────
-        const rawResult = await simulateWithLogs(
-          program.methods.benchmarkRaw().accounts({ store: rawStore.publicKey })
-        );
-        const borshRawCu = await simulateCu(
-          program.methods.benchmarkBorsh().accounts({ store: rawStore.publicKey })
-        );
+          const rentSaving = rentRaw - rentComp;
+          const ratio = (size / compSize).toFixed(2);
+          const writeOverhead =
+            storeRawCu !== null && storeCompCu !== null
+              ? storeCompCu - storeRawCu
+              : null;
 
-        let decompResult: { cu: number | null; logs: string[] } = { cu: null, logs: [] };
-        let borshCompCu: number | null = null;
-        if (!compressOom) {
-          [decompResult, borshCompCu] = await Promise.all([
-            simulateWithLogs(program.methods.benchmarkDecompress().accounts({ store: compStore.publicKey })),
-            simulateCu(program.methods.benchmarkBorsh().accounts({ store: compStore.publicKey })),
-          ]);
-        }
+          let breakEven: string;
+          if (storeCompCu === null) {
+            breakEven = "OOM";
+          } else if (rentSaving <= 0) {
+            breakEven = "harmful";
+          } else if (writeOverhead !== null && writeOverhead <= 0) {
+            breakEven = "always wins";
+          } else if (writeOverhead !== null) {
+            const writes = Math.round(
+              (rentSaving * 1_000_000) / (writeOverhead * PRIORITY_FEE_ULAMPORTS)
+            );
+            breakEven = writes.toLocaleString("en");
+          } else {
+            breakEven = "N/A";
+          }
 
-        const rawCu = rawResult.cu;
-        const decompCu = decompResult.cu;
+          writeResults.push({
+            label,
+            size,
+            compSize,
+            ratio,
+            storeRawCu,
+            storeCompCu,
+            writeOverhead,
+            rentSaving,
+            breakEven,
+          });
 
-        // ── Correctness: verify compress→decompress roundtrip ─────────────
-        const expectedChecksum = BigInt(raw.reduce((sum, b) => sum + b, 0));
-        const rawChecksum = parseChecksum(rawResult.logs);
-        assert.notStrictEqual(rawChecksum, null, "raw checksum not found in logs");
-        assert.strictEqual(rawChecksum, expectedChecksum,
-          `raw checksum mismatch: expected ${expectedChecksum}, got ${rawChecksum}`);
-
-        if (!compressOom) {
-          const decompChecksum = parseChecksum(decompResult.logs);
-          assert.notStrictEqual(decompChecksum, null, "decompress checksum not found in logs");
-          assert.strictEqual(decompChecksum, expectedChecksum,
-            `roundtrip failed: expected checksum ${expectedChecksum}, got ${decompChecksum}`);
-        }
-
-        // ── Net costs: algorithm CU with Borsh overhead subtracted ────────
-        const netRawCu       = rawCu       !== null && borshRawCu  !== null ? rawCu       - borshRawCu  : null;
-        const netWriteCompCu = writeCompCu !== null && borshRawCu  !== null ? writeCompCu - borshRawCu  : null;
-        const netDecompCu    = decompCu    !== null && borshCompCu !== null ? decompCu    - borshCompCu : null;
-
-        // ── Break-even: reads until rent saving > per-read CU overhead ────
-        // readOverhead = extra CU per read when using compression (decomp vs raw).
-        // writeOverhead is a one-time cost (sunk on first write).
-        const readOverhead = rawCu !== null && decompCu !== null ? decompCu - rawCu : null;
-        const rentSavings  = rentRaw - rentComp;
-
-        let breakEven: string;
-        if (compressOom) {
-          breakEven = "OOM";
-        } else if (rentSavings <= 0) {
-          breakEven = "harmful";
-        } else if (readOverhead !== null && readOverhead <= 0) {
-          breakEven = "always wins";
-        } else if (readOverhead !== null) {
-          const reads = Math.round(
-            (rentSavings * 1_000_000) / (readOverhead * PRIORITY_FEE_ULAMPORTS)
+          console.log(
+            `  [${label}] ${size}B → ${compSize}B (${ratio}x)` +
+              `  raw=${storeRawCu}  comp=${storeCompCu}` +
+              `  overhead=${writeOverhead}` +
+              `  rent${rentSaving >= 0 ? "+" : ""}${rentSaving}` +
+              `  break-even=${breakEven}`
           );
-          breakEven = reads.toLocaleString("en");
-        } else {
-          breakEven = "N/A";
-        }
-
-        results.push({
-          label, size, compSize, ratio: (size / compSize).toFixed(2),
-          borshRawCu, borshCompCu, rawCu, writeCompCu, decompCu,
-          netRawCu, netWriteCompCu, netDecompCu,
-          rentSavings, breakEven,
         });
-
-        console.log(
-          `  [${label}] ${size}B → ${compSize}B(${(size / compSize).toFixed(1)}x)` +
-          `  borsh=${borshRawCu}  rawCU=${rawCu}  writeCU=${writeCompCu}  decompCU=${decompCu}` +
-          `  netWrite=${netWriteCompCu}  netDecomp=${netDecompCu}` +
-          `  rent${rentSavings >= 0 ? "+" : ""}${rentSavings}L  break-even=${breakEven}`
-        );
       });
     });
   });
 
-  after("print summary table", () => {
+  // ── Read benchmarks (account-limited sizes) ─────────────────────────────
+
+  describe("READ (account-limited)", () => {
+    datasets.forEach(({ label, gen }) => {
+      READ_SIZES.forEach((size) => {
+        it(`[${label}] ${size}B`, async function () {
+          this.timeout(120_000);
+          const data = gen(size);
+          const expectedChecksum = BigInt(data.reduce((sum, b) => sum + b, 0));
+
+          const [rawStore, compStore, rentRaw] = await Promise.all([
+            createStore(program, provider),
+            createStore(program, provider),
+            provider.connection.getMinimumBalanceForRentExemption(accountSpace(size)),
+          ]);
+
+          await uploadChunked(program, provider, rawStore, data);
+          await uploadChunked(program, provider, compStore, data);
+
+          let compSize = size;
+          let rentComp = rentRaw;
+          let compressOom = false;
+
+          try {
+            await program.methods
+              .compressStored()
+              .accounts({
+                store: compStore.publicKey,
+                payer: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+              })
+              .preInstructions([
+                ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+              ])
+              .rpc();
+
+            const compAccount = await program.account.dataStore.fetch(
+              compStore.publicKey
+            );
+            compSize = (compAccount.data as Buffer).length;
+            rentComp =
+              await provider.connection.getMinimumBalanceForRentExemption(
+                accountSpace(compSize)
+              );
+          } catch (e: any) {
+            const msg = e.message ?? "";
+            const logs: string[] =
+              e.logs ?? e.simulationResponse?.logs ?? [];
+            if (
+              msg.includes("out of memory") ||
+              logs.some((l: string) => l.includes("out of memory"))
+            ) {
+              compressOom = true;
+            } else {
+              throw e;
+            }
+          }
+
+          const rawResult = await simulateWithLogs(
+            program.methods
+              .readRaw()
+              .accounts({ store: rawStore.publicKey })
+          );
+
+          let compResult: { cu: number | null; logs: string[] } = {
+            cu: null,
+            logs: [],
+          };
+          if (!compressOom) {
+            compResult = await simulateWithLogs(
+              program.methods
+                .readCompressed()
+                .accounts({ store: compStore.publicKey })
+            );
+          }
+
+          const rawChecksum = parseChecksum(rawResult.logs);
+          assert.notStrictEqual(rawChecksum, null, "raw checksum missing");
+          assert.strictEqual(rawChecksum, expectedChecksum, "raw checksum mismatch");
+
+          if (!compressOom) {
+            const compChecksum = parseChecksum(compResult.logs);
+            assert.notStrictEqual(compChecksum, null, "compressed checksum missing");
+            assert.strictEqual(
+              compChecksum,
+              expectedChecksum,
+              "roundtrip checksum mismatch"
+            );
+          }
+
+          const readRawCu = rawResult.cu;
+          const readCompCu = compResult.cu;
+          const readOverhead =
+            readRawCu !== null && readCompCu !== null
+              ? readCompCu - readRawCu
+              : null;
+          const rentSaving = rentRaw - rentComp;
+          const ratio = (size / compSize).toFixed(2);
+
+          let breakEven: string;
+          if (compressOom) {
+            breakEven = "OOM";
+          } else if (rentSaving <= 0) {
+            breakEven = "harmful";
+          } else if (readOverhead !== null && readOverhead <= 0) {
+            breakEven = "always wins";
+          } else if (readOverhead !== null) {
+            const reads = Math.round(
+              (rentSaving * 1_000_000) / (readOverhead * PRIORITY_FEE_ULAMPORTS)
+            );
+            breakEven = reads.toLocaleString("en");
+          } else {
+            breakEven = "N/A";
+          }
+
+          readResults.push({
+            label,
+            size,
+            compSize,
+            ratio,
+            readRawCu,
+            readCompCu,
+            readOverhead,
+            rentSaving,
+            breakEven,
+          });
+
+          console.log(
+            `  [${label}] ${size}B → ${compSize}B (${ratio}x)` +
+              `  rawRead=${readRawCu}  compRead=${readCompCu}` +
+              `  overhead=${readOverhead}` +
+              `  rent${rentSaving >= 0 ? "+" : ""}${rentSaving}` +
+              `  break-even=${breakEven}`
+          );
+        });
+      });
+    });
+  });
+
+  // ── Output ──────────────────────────────────────────────────────────────
+
+  after("print results", () => {
     const p = (v: string | number, w: number) => String(v).padStart(w);
+    const fmt = (n: number | null) => (n !== null ? n.toLocaleString("en") : "OOM");
 
-    // Table 1: total CU (includes Borsh overhead)
+    // Write table
     {
-      const W = [10, 6, 6, 6, 9, 9, 13, 9, 11, 20];
-      const cols = ["data-type", "orig", "comp", "ratio", "borsh CU", "raw CU", "write+comp CU", "decomp CU", "rent+save", `break-even@${PRIORITY_FEE_ULAMPORTS}µL`];
-      const sep = "─".repeat(W.reduce((a, b) => a + b + 2, 0));
-
-      console.log("\n" + sep);
-      console.log("  Total CU — Case A: raw read  |  Case B: on-chain compress write + decompress read");
-      console.log(sep);
-      console.log("  " + cols.map((c, i) => p(c, W[i])).join("  "));
-      console.log(sep);
-
-      let lastLabel = "";
-      for (const r of results) {
-        if (r.label !== lastLabel && lastLabel !== "") console.log(sep);
-        lastLabel = r.label;
-        console.log("  " + [
-          p(r.label, W[0]), p(r.size, W[1]), p(r.compSize, W[2]),
-          p(r.ratio + "x", W[3]),
-          p(r.borshRawCu ?? "N/A", W[4]),
-          p(r.rawCu ?? "N/A", W[5]),
-          p(r.writeCompCu ?? "N/A", W[6]),
-          p(r.decompCu ?? "N/A", W[7]),
-          p(r.rentSavings, W[8]), p(r.breakEven, W[9]),
-        ].join("  "));
+      console.log("\n── WRITE BENCHMARK (tx-limited) ──\n");
+      const cols = ["data-type", "size", "comp", "ratio", "store-raw CU", "store-comp CU", "overhead", "rent-saving", "break-even"];
+      const W = [10, 5, 5, 6, 13, 14, 9, 12, 12];
+      console.log(cols.map((c, i) => p(c, W[i])).join("  "));
+      console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+      for (const r of writeResults) {
+        console.log(
+          [
+            p(r.label, W[0]),
+            p(r.size, W[1]),
+            p(r.compSize, W[2]),
+            p(r.ratio + "x", W[3]),
+            p(fmt(r.storeRawCu), W[4]),
+            p(fmt(r.storeCompCu), W[5]),
+            p(fmt(r.writeOverhead), W[6]),
+            p(r.rentSaving, W[7]),
+            p(r.breakEven, W[8]),
+          ].join("  ")
+        );
       }
-      console.log(sep);
     }
 
-    // Table 2: net CU (Borsh subtracted — algorithm cost only)
+    // Read table
     {
-      const W = [10, 6, 6, 6, 9, 14, 11, 11, 20];
-      const cols = ["data-type", "orig", "comp", "ratio", "net cksum", "net write+comp", "net decomp", "rent+save", `break-even@${PRIORITY_FEE_ULAMPORTS}µL`];
-      const sep = "─".repeat(W.reduce((a, b) => a + b + 2, 0));
-
-      console.log("\n" + sep);
-      console.log("  Net algorithm CU (Borsh overhead SUBTRACTED — pure algorithm cost)");
-      console.log(sep);
-      console.log("  " + cols.map((c, i) => p(c, W[i])).join("  "));
-      console.log(sep);
-
+      console.log("\n── READ BENCHMARK (account-limited) ──\n");
+      const cols = ["data-type", "size", "comp", "ratio", "read-raw CU", "read-comp CU", "overhead", "rent-saving", "break-even"];
+      const W = [10, 6, 6, 6, 12, 13, 9, 12, 12];
+      console.log(cols.map((c, i) => p(c, W[i])).join("  "));
+      console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
       let lastLabel = "";
-      for (const r of results) {
-        if (r.label !== lastLabel && lastLabel !== "") console.log(sep);
+      for (const r of readResults) {
+        if (r.label !== lastLabel && lastLabel !== "") {
+          console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+        }
         lastLabel = r.label;
-        console.log("  " + [
-          p(r.label, W[0]), p(r.size, W[1]), p(r.compSize, W[2]),
-          p(r.ratio + "x", W[3]),
-          p(r.netRawCu ?? "N/A", W[4]),
-          p(r.netWriteCompCu ?? "N/A", W[5]),
-          p(r.netDecompCu ?? "N/A", W[6]),
-          p(r.rentSavings, W[7]), p(r.breakEven, W[8]),
-        ].join("  "));
+        console.log(
+          [
+            p(r.label, W[0]),
+            p(r.size, W[1]),
+            p(r.compSize, W[2]),
+            p(r.ratio + "x", W[3]),
+            p(fmt(r.readRawCu), W[4]),
+            p(fmt(r.readCompCu), W[5]),
+            p(fmt(r.readOverhead), W[6]),
+            p(r.rentSaving, W[7]),
+            p(r.breakEven, W[8]),
+          ].join("  ")
+        );
       }
-      console.log(sep + "\n");
     }
 
-    // ── Write results to JSON ─────────────────────────────────────────
-    const strategy = process.env.BENCH_STRATEGY || "lz4";
+    // JSON output
     const outDir = path.resolve(__dirname, "..", "results");
     fs.mkdirSync(outDir, { recursive: true });
-
-    const json = JSON.stringify({
-      strategy,
-      timestamp: new Date().toISOString(),
-      config: { priorityFeeUlamports: PRIORITY_FEE_ULAMPORTS },
-      rows: results,
-    }, null, 2);
-
-    const outPath = path.join(outDir, `benchmark-${strategy}.json`);
+    const json = JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        config: { priorityFeeUlamports: PRIORITY_FEE_ULAMPORTS },
+        write: writeResults,
+        read: readResults,
+      },
+      null,
+      2
+    );
+    const outPath = path.join(outDir, "benchmark.json");
     fs.writeFileSync(outPath, json);
-    console.log(`Results written to ${outPath}`);
+    console.log(`\nResults written to ${outPath}`);
   });
 });
