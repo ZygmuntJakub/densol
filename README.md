@@ -2,7 +2,7 @@
 
 Transparent LZ4 compression for Anchor account fields. Store less data, pay less rent.
 
-I'm a software engineer who is new to Solana. I had a question nobody seemed to have answered: is on-chain compression actually worth the extra CU? So I measured it. This repo is the result. If you spot a mistake, open an issue.
+I'm a software engineer who is new to Solana. I had a question which is hard to find an answer: is on-chain compression actually worth the extra CU? So I measured it. This repo is the result. If you spot a mistake, open an issue.
 
 ## Use densol
 
