@@ -5,22 +5,8 @@
 ///   compress_tool          — read raw bytes from stdin, compress them
 ///
 /// Output: compressed bytes as hex on stdout; stats on stderr.
-///
-/// Strategy is selected at compile time via feature flags (default: lz4).
-use densol::Compressor;
+use densol::{Compressor, Lz4};
 use std::io::Read;
-
-#[cfg(all(feature = "lz4", feature = "identity"))]
-compile_error!("select exactly one strategy: lz4 or identity, not both");
-
-#[cfg(not(any(feature = "lz4", feature = "identity")))]
-compile_error!("select exactly one strategy feature: lz4 | identity");
-
-#[cfg(feature = "lz4")]
-use densol::Lz4 as Strategy;
-
-#[cfg(feature = "identity")]
-use densol::Identity as Strategy;
 
 fn main() {
     let data: Vec<u8> = match std::env::args().nth(1) {
@@ -41,13 +27,13 @@ fn main() {
         }
     };
 
-    let compressed = Strategy::compress(&data).expect("compression failed");
+    let compressed = Lz4::compress(&data).expect("compression failed");
     let hex: String = compressed.iter().map(|b| format!("{b:02x}")).collect();
     println!("{hex}");
 
     eprintln!(
         "strategy={}  original={}B  compressed={}B  ratio={:.2}x",
-        Strategy::NAME,
+        Lz4::NAME,
         data.len(),
         compressed.len(),
         data.len() as f64 / compressed.len() as f64,

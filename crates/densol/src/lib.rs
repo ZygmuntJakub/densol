@@ -62,18 +62,3 @@ impl std::error::Error for CompressionError {}
 mod lz4_impl;
 #[cfg(feature = "lz4")]
 pub use lz4_impl::Lz4;
-
-#[cfg(feature = "identity")]
-mod identity;
-#[cfg(feature = "identity")]
-pub use identity::Identity;
-
-#[cfg(feature = "deflate")]
-mod deflate_impl;
-#[cfg(feature = "deflate")]
-pub use deflate_impl::Deflate;
-
-#[cfg(feature = "rle")]
-mod rle_impl;
-#[cfg(feature = "rle")]
-pub use rle_impl::Rle;
