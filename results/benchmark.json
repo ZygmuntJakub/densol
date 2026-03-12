@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-11T18:31:52.723Z",
+  "timestamp": "2026-03-12T10:53:43.045Z",
   "config": {
     "priorityFeeUlamports": 1000
   },
@@ -11,7 +11,9 @@
       "ratio": "3.05",
       "storeRawCu": 4840,
       "storeCompCu": 9800,
-      "rentSaving": 1197120
+      "writeOverhead": 4960,
+      "rentSaving": 1197120,
+      "breakEven": "241,355"
     },
     {
       "label": "repetitive",
@@ -20,7 +22,9 @@
       "ratio": "6.02",
       "storeRawCu": 4840,
       "storeCompCu": 10277,
-      "rentSaving": 2971920
+      "writeOverhead": 5437,
+      "rentSaving": 2971920,
+      "breakEven": "546,610"
     },
     {
       "label": "repetitive",
@@ -29,7 +33,9 @@
       "ratio": "9.30",
       "storeRawCu": 4840,
       "storeCompCu": 10852,
-      "rentSaving": 4969440
+      "writeOverhead": 6012,
+      "rentSaving": 4969440,
+      "breakEven": "826,587"
     },
     {
       "label": "json-like",
@@ -38,7 +44,9 @@
       "ratio": "1.74",
       "storeRawCu": 4840,
       "storeCompCu": 13473,
-      "rentSaving": 758640
+      "writeOverhead": 8633,
+      "rentSaving": 758640,
+      "breakEven": "87,877"
     },
     {
       "label": "json-like",
@@ -47,7 +55,9 @@
       "ratio": "3.46",
       "storeRawCu": 4840,
       "storeCompCu": 14018,
-      "rentSaving": 2533440
+      "writeOverhead": 9178,
+      "rentSaving": 2533440,
+      "breakEven": "276,034"
     },
     {
       "label": "json-like",
@@ -56,7 +66,9 @@
       "ratio": "5.37",
       "storeRawCu": 4840,
       "storeCompCu": 14593,
-      "rentSaving": 4530960
+      "writeOverhead": 9753,
+      "rentSaving": 4530960,
+      "breakEven": "464,571"
     },
     {
       "label": "random",
@@ -65,7 +77,9 @@
       "ratio": "0.97",
       "storeRawCu": 4840,
       "storeCompCu": 11990,
-      "rentSaving": -48720
+      "writeOverhead": 7150,
+      "rentSaving": -48720,
+      "breakEven": "harmful"
     },
     {
       "label": "random",
@@ -74,7 +88,9 @@
       "ratio": "0.98",
       "storeRawCu": 4840,
       "storeCompCu": 14630,
-      "rentSaving": -55680
+      "writeOverhead": 9790,
+      "rentSaving": -55680,
+      "breakEven": "harmful"
     },
     {
       "label": "random",
@@ -83,7 +99,9 @@
       "ratio": "0.99",
       "storeRawCu": 4840,
       "storeCompCu": 16825,
-      "rentSaving": -69600
+      "writeOverhead": 11985,
+      "rentSaving": -69600,
+      "breakEven": "harmful"
     }
   ],
   "read": [

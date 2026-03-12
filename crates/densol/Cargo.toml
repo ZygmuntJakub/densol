@@ -3,7 +3,7 @@ name = "densol"
 version = "0.1.0"
 edition = "2021"
 description = "Compression strategy trait + SBF-compatible implementations for Solana programs"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 [features]
 default      = ["discriminant"]

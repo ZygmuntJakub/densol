@@ -3,7 +3,7 @@ name = "densol-derive"
 version = "0.1.0"
 edition = "2021"
 description = "Derive macro for densol: #[derive(Compress)]"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 [lib]
 proc-macro = true
