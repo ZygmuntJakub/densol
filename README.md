@@ -24,6 +24,8 @@ pub struct MyAccount {
 
 ## Run tests
 
+Requires [Rust](https://rustup.rs), [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools), and [Anchor](https://www.anchor-lang.com/docs/installation).
+
 ```bash
 anchor test
 ```
