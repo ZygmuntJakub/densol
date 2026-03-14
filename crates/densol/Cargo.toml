@@ -2,17 +2,25 @@
 name = "densol"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75"
 description = "Compression strategy trait + SBF-compatible implementations for Solana programs"
 license = "Apache-2.0"
+repository = "https://github.com/ZygmuntJakub/densol"
+homepage = "https://densol.dev"
+readme = "../../README.md"
+keywords = ["solana", "compression", "lz4", "sbf", "anchor"]
+categories = ["compression", "no-std", "wasm"]
 
 [features]
-default      = ["discriminant"]
+default      = ["lz4", "discriminant", "derive"]
 discriminant = []
 lz4          = ["dep:lz4_flex"]
 std          = []
+derive       = ["dep:densol-derive"]
 
 [dependencies]
-lz4_flex     = { version = "0.11", default-features = false, optional = true }
+lz4_flex      = { version = "0.11", default-features = false, optional = true }
+densol-derive = { version = "0.1", path = "../densol-derive", optional = true }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

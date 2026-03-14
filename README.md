@@ -6,9 +6,14 @@ I'm a software engineer who is new to Solana. I had a question which is hard to 
 
 ## Use densol
 
+```toml
+# Cargo.toml
+densol = "0.1"
+```
+
 ```rust
 use densol::Lz4 as Strategy;
-use densol_derive::Compress;
+use densol::Compress;
 
 #[account]
 #[derive(Compress)]

@@ -410,7 +410,6 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "densol",
- "densol-derive",
 ]
 
 [[package]]
@@ -471,6 +470,7 @@ dependencies = [
 name = "densol"
 version = "0.1.0"
 dependencies = [
+ "densol-derive",
  "lz4_flex",
 ]
 

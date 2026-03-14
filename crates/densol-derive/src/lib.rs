@@ -1,3 +1,20 @@
+//! Derive macro for [`densol`](https://crates.io/crates/densol).
+//!
+//! Generates `set_<field>` and `get_<field>` methods for every `Vec<u8>` field
+//! tagged with `#[compress]`. The compression algorithm is selected at compile
+//! time via a `Strategy` type alias that must be in scope:
+//!
+//! ```ignore
+//! use densol::Lz4 as Strategy;
+//! use densol_derive::Compress;
+//!
+//! #[derive(Compress)]
+//! pub struct MyAccount {
+//!     #[compress]
+//!     pub data: Vec<u8>,
+//! }
+//! ```
+
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use densol_derive::Compress;
+use densol::Compress;
 
 declare_id!("AwLfrSLLSDht8b59VmyVhLGSg5vgdKyWMseKQpjSohKM");
 

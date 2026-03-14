@@ -1,3 +1,42 @@
+//! On-chain LZ4 compression for Solana programs.
+//!
+//! `densol` provides a [`Compressor`] trait and a ready-to-use [`Lz4`] implementation
+//! that fits within the SBF VM's 32 KB heap constraint. Pair it with
+//! [`densol-derive`](https://crates.io/crates/densol-derive) to add transparent
+//! compression to any Anchor account field with a single attribute.
+//!
+//! # Quick start
+//!
+//! Add to `Cargo.toml`:
+//! ```toml
+//! densol = "0.1"
+//! ```
+//!
+//! ```ignore
+//! use densol::Lz4 as Strategy;
+//! use densol::Compress;
+//!
+//! #[account]
+//! #[derive(Compress)]
+//! pub struct MyAccount {
+//!     #[compress]
+//!     pub data: Vec<u8>,
+//! }
+//!
+//! // generated:
+//! // my_account.set_data(&raw_bytes)?;  // compress + store
+//! // let raw = my_account.get_data()?;  // load + decompress
+//! ```
+//!
+//! # Features
+//!
+//! | Feature | Default | Description |
+//! |---|---|---|
+//! | `lz4` | yes | Enables the [`Lz4`] strategy via `lz4_flex` |
+//! | `discriminant` | yes | Prepends a 1-byte algorithm tag to compressed output |
+//! | `derive` | yes | Re-exports the `#[derive(Compress)]` macro |
+//! | `std` | no | Implements `std::error::Error` for [`CompressionError`] |
+
 #![no_std]
 extern crate alloc;
 
@@ -11,7 +50,7 @@ use core::fmt;
 ///
 /// Select a strategy at compile time via feature flags, then alias it:
 /// ```ignore
-/// use solana_compression::Lz4 as Strategy;
+/// use densol::Lz4 as Strategy;
 /// ```
 pub trait Compressor {
     /// Short identifier used in program logs and metrics.
@@ -25,13 +64,14 @@ pub trait Compressor {
     /// input size).  LZ4 is infallible and always returns `Ok`.
     fn compress(input: &[u8]) -> Result<Vec<u8>, CompressionError>;
 
-    /// Decompress `input` previously produced by [`compress`].
+    /// Decompress `input` previously produced by [`Self::compress`].
     fn decompress(input: &[u8]) -> Result<Vec<u8>, CompressionError>;
 }
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum CompressionError {
     /// Input is corrupt, truncated, or was produced by a different algorithm.
     DecompressFailed,
@@ -62,3 +102,8 @@ impl std::error::Error for CompressionError {}
 mod lz4_impl;
 #[cfg(feature = "lz4")]
 pub use lz4_impl::Lz4;
+
+// ── Derive re-export ──────────────────────────────────────────────────────────
+
+#[cfg(feature = "derive")]
+pub use densol_derive::Compress;

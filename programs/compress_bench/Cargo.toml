@@ -24,8 +24,7 @@ custom-panic = []
 
 [dependencies]
 anchor-lang         = "0.32.1"
-densol        = { path = "../../crates/densol", default-features = false }
-densol-derive = { path = "../../crates/densol-derive" }
+densol = { path = "../../crates/densol", default-features = false, features = ["derive"] }
 
 
 [lints.rust]
