@@ -1,4 +1,4 @@
-use crate::{Compressor, CompressionError};
+use crate::{CompressionError, Compressor};
 use alloc::vec::Vec;
 
 /// LZ4 compression strategy.
@@ -67,7 +67,10 @@ mod tests {
     fn roundtrip_repetitive() {
         let input: Vec<u8> = b"aaaa".repeat(256);
         let compressed = Lz4::compress(&input).unwrap();
-        assert!(compressed.len() < input.len(), "repetitive data should compress");
+        assert!(
+            compressed.len() < input.len(),
+            "repetitive data should compress"
+        );
         let decompressed = Lz4::decompress(&compressed).unwrap();
         assert_eq!(decompressed, input);
     }

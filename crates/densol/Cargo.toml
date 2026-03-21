@@ -15,6 +15,7 @@ categories = ["compression", "no-std", "wasm"]
 default      = ["lz4", "discriminant", "derive"]
 discriminant = []
 lz4          = ["dep:lz4_flex"]
+chunked_lz4  = ["lz4"]
 std          = []
 derive       = ["dep:densol-derive"]
 

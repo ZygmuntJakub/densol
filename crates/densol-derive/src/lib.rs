@@ -42,8 +42,8 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Type};
 pub fn derive_compress(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match expand(input) {
-        Ok(ts)  => ts.into(),
-        Err(e)  => e.to_compile_error().into(),
+        Ok(ts) => ts.into(),
+        Err(e) => e.to_compile_error().into(),
     }
 }
 
@@ -53,15 +53,19 @@ fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let fields = match &input.data {
         Data::Struct(s) => match &s.fields {
             Fields::Named(f) => &f.named,
-            _ => return Err(syn::Error::new(
-                Span::call_site(),
-                "#[derive(Compress)] only supports structs with named fields",
-            )),
+            _ => {
+                return Err(syn::Error::new(
+                    Span::call_site(),
+                    "#[derive(Compress)] only supports structs with named fields",
+                ))
+            }
         },
-        _ => return Err(syn::Error::new(
-            Span::call_site(),
-            "#[derive(Compress)] only supports structs",
-        )),
+        _ => {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "#[derive(Compress)] only supports structs",
+            ))
+        }
     };
 
     let mut methods = Vec::new();

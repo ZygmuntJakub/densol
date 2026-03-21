@@ -44,6 +44,17 @@ function pseudoRandom(size: number): Buffer {
   return out;
 }
 
+function orderbook(size: number): Buffer {
+  // 80-byte entry: 8B price f64 LE + 8B qty f64 LE + 1B side + 63B zeros
+  const entry = Buffer.alloc(80);
+  entry.writeDoubleLE(1234.5678, 0); // price
+  entry.writeDoubleLE(100.0, 8); // quantity
+  entry[16] = 0x01; // side: bid; bytes 17-79 already zero
+  const out = Buffer.allocUnsafe(size);
+  for (let i = 0; i < size; i++) out[i] = entry[i % 80];
+  return out;
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 const accountSpace = (n: number) => 8 + 4 + n;
@@ -72,7 +83,10 @@ async function uploadChunked(
   data: Buffer
 ): Promise<void> {
   for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
-    const chunk = data.slice(offset, Math.min(offset + CHUNK_SIZE, data.length));
+    const chunk = data.slice(
+      offset,
+      Math.min(offset + CHUNK_SIZE, data.length)
+    );
     await program.methods
       .storeRaw(chunk)
       .accounts({
@@ -80,7 +94,9 @@ async function uploadChunked(
         payer: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+      ])
       .rpc();
   }
 }
@@ -91,7 +107,9 @@ async function realTxCu(
   builder: any
 ): Promise<number | null> {
   const sig = await builder
-    .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+    ])
     .rpc();
   await provider.connection.confirmTransaction(sig, "confirmed");
   const tx = await provider.connection.getTransaction(sig, {
@@ -106,7 +124,9 @@ async function simulateWithLogs(
   builder: any
 ): Promise<{ cu: number | null; logs: string[] }> {
   const result = await builder
-    .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU })])
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+    ])
     .simulate();
   const logs: string[] = result.raw;
   let cu: number | null = null;
@@ -154,6 +174,41 @@ type ReadRow = {
   breakEven: string;
 };
 
+type ChunkedWriteRow = {
+  label: string;
+  size: number;
+  compSize: number;
+  ratio: string;
+  storeRawCu: number | null;
+  storeChunkedCu: number | null;
+  overhead: number | null;
+  rentSaving: number;
+  breakEven: string;
+};
+
+type ChunkedReadFullRow = {
+  label: string;
+  size: number;
+  compSize: number;
+  ratio: string;
+  readRawCu: number | null;
+  readChunkedFullCu: number | null;
+  overhead: number | null;
+  rentSaving: number;
+  breakEven: string;
+};
+
+type ChunkedReadChunkRow = {
+  label: string;
+  size: number;
+  compSize: number;
+  chunkCount: number;
+  chunkIdx: number;
+  rawCu: number | null;
+  chunkCu: number | null;
+  overhead: number | null;
+};
+
 // ── Benchmark suite ─────────────────────────────────────────────────────────
 
 describe("compress_bench", () => {
@@ -163,11 +218,15 @@ describe("compress_bench", () => {
 
   const writeResults: WriteRow[] = [];
   const readResults: ReadRow[] = [];
+  const chunkedWriteResults: ChunkedWriteRow[] = [];
+  const chunkedReadFullResults: ChunkedReadFullRow[] = [];
+  const chunkedReadChunkResults: ChunkedReadChunkRow[] = [];
 
   const datasets: Array<{ label: string; gen: (n: number) => Buffer }> = [
     { label: "repetitive", gen: repetitive },
     { label: "json-like", gen: jsonLike },
     { label: "random", gen: pseudoRandom },
+    { label: "orderbook", gen: orderbook },
   ];
 
   // ── Write benchmarks (tx-limited sizes) ─────────────────────────────────
@@ -182,7 +241,9 @@ describe("compress_bench", () => {
           const [rawStore, compStore, rentRaw] = await Promise.all([
             createStore(program, provider),
             createStore(program, provider),
-            provider.connection.getMinimumBalanceForRentExemption(accountSpace(size)),
+            provider.connection.getMinimumBalanceForRentExemption(
+              accountSpace(size)
+            ),
           ]);
 
           const storeRawCu = await realTxCu(
@@ -218,8 +279,7 @@ describe("compress_bench", () => {
               );
           } catch (e: any) {
             const msg = e.message ?? "";
-            const logs: string[] =
-              e.logs ?? e.simulationResponse?.logs ?? [];
+            const logs: string[] = e.logs ?? e.simulationResponse?.logs ?? [];
             if (
               msg.includes("out of memory") ||
               logs.some((l: string) => l.includes("out of memory"))
@@ -246,7 +306,8 @@ describe("compress_bench", () => {
             breakEven = "always wins";
           } else if (writeOverhead !== null) {
             const writes = Math.round(
-              (rentSaving * 1_000_000) / (writeOverhead * PRIORITY_FEE_ULAMPORTS)
+              (rentSaving * 1_000_000) /
+                (writeOverhead * PRIORITY_FEE_ULAMPORTS)
             );
             breakEven = writes.toLocaleString("en");
           } else {
@@ -290,7 +351,9 @@ describe("compress_bench", () => {
           const [rawStore, compStore, rentRaw] = await Promise.all([
             createStore(program, provider),
             createStore(program, provider),
-            provider.connection.getMinimumBalanceForRentExemption(accountSpace(size)),
+            provider.connection.getMinimumBalanceForRentExemption(
+              accountSpace(size)
+            ),
           ]);
 
           await uploadChunked(program, provider, rawStore, data);
@@ -323,8 +386,7 @@ describe("compress_bench", () => {
               );
           } catch (e: any) {
             const msg = e.message ?? "";
-            const logs: string[] =
-              e.logs ?? e.simulationResponse?.logs ?? [];
+            const logs: string[] = e.logs ?? e.simulationResponse?.logs ?? [];
             if (
               msg.includes("out of memory") ||
               logs.some((l: string) => l.includes("out of memory"))
@@ -336,9 +398,7 @@ describe("compress_bench", () => {
           }
 
           const rawResult = await simulateWithLogs(
-            program.methods
-              .readRaw()
-              .accounts({ store: rawStore.publicKey })
+            program.methods.readRaw().accounts({ store: rawStore.publicKey })
           );
 
           let compResult: { cu: number | null; logs: string[] } = {
@@ -355,11 +415,19 @@ describe("compress_bench", () => {
 
           const rawChecksum = parseChecksum(rawResult.logs);
           assert.notStrictEqual(rawChecksum, null, "raw checksum missing");
-          assert.strictEqual(rawChecksum, expectedChecksum, "raw checksum mismatch");
+          assert.strictEqual(
+            rawChecksum,
+            expectedChecksum,
+            "raw checksum mismatch"
+          );
 
           if (!compressOom) {
             const compChecksum = parseChecksum(compResult.logs);
-            assert.notStrictEqual(compChecksum, null, "compressed checksum missing");
+            assert.notStrictEqual(
+              compChecksum,
+              null,
+              "compressed checksum missing"
+            );
             assert.strictEqual(
               compChecksum,
               expectedChecksum,
@@ -416,16 +484,353 @@ describe("compress_bench", () => {
     });
   });
 
+  // ── ChunkedLz4 write benchmark ───────────────────────────────────────────
+
+  describe("WRITE (chunked_lz4)", () => {
+    datasets.forEach(({ label, gen }) => {
+      WRITE_SIZES.forEach((size) => {
+        it(`[${label}] ${size}B`, async function () {
+          this.timeout(120_000);
+          const data = gen(size);
+
+          const [rawStore, chunkedStore, rentRaw] = await Promise.all([
+            createStore(program, provider),
+            createStore(program, provider),
+            provider.connection.getMinimumBalanceForRentExemption(
+              accountSpace(size)
+            ),
+          ]);
+
+          const storeRawCu = await realTxCu(
+            provider,
+            program.methods.storeRaw(data).accounts({
+              store: rawStore.publicKey,
+              payer: provider.wallet.publicKey,
+              systemProgram: SystemProgram.programId,
+            })
+          );
+
+          let storeChunkedCu: number | null = null;
+          let compSize = size;
+          let rentComp = rentRaw;
+
+          try {
+            storeChunkedCu = await realTxCu(
+              provider,
+              program.methods.storeChunked(data).accounts({
+                store: chunkedStore.publicKey,
+                payer: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+              })
+            );
+
+            const compAccount = await program.account.dataStore.fetch(
+              chunkedStore.publicKey
+            );
+            compSize = (compAccount.data as Buffer).length;
+            rentComp =
+              await provider.connection.getMinimumBalanceForRentExemption(
+                accountSpace(compSize)
+              );
+          } catch (e: any) {
+            const msg = e.message ?? "";
+            const logs: string[] = e.logs ?? e.simulationResponse?.logs ?? [];
+            if (
+              msg.includes("out of memory") ||
+              logs.some((l: string) => l.includes("out of memory"))
+            ) {
+              storeChunkedCu = null;
+            } else {
+              throw e;
+            }
+          }
+
+          const rentSaving = rentRaw - rentComp;
+          const ratio = (size / compSize).toFixed(2);
+          const overhead =
+            storeRawCu !== null && storeChunkedCu !== null
+              ? storeChunkedCu - storeRawCu
+              : null;
+
+          let breakEven: string;
+          if (storeChunkedCu === null) {
+            breakEven = "OOM";
+          } else if (rentSaving <= 0) {
+            breakEven = "harmful";
+          } else if (overhead !== null && overhead <= 0) {
+            breakEven = "always wins";
+          } else if (overhead !== null) {
+            const writes = Math.round(
+              (rentSaving * 1_000_000) / (overhead * PRIORITY_FEE_ULAMPORTS)
+            );
+            breakEven = writes.toLocaleString("en");
+          } else {
+            breakEven = "N/A";
+          }
+
+          chunkedWriteResults.push({
+            label,
+            size,
+            compSize,
+            ratio,
+            storeRawCu,
+            storeChunkedCu,
+            overhead,
+            rentSaving,
+            breakEven,
+          });
+
+          console.log(
+            `  [${label}] ${size}B → ${compSize}B (${ratio}x)` +
+              `  raw=${storeRawCu}  chunked=${storeChunkedCu}` +
+              `  overhead=${overhead}` +
+              `  rent${rentSaving >= 0 ? "+" : ""}${rentSaving}` +
+              `  break-even=${breakEven}`
+          );
+        });
+      });
+    });
+  });
+
+  // ── ChunkedLz4 full-decompress read benchmark ────────────────────────────
+
+  describe("READ (chunked_lz4 full)", () => {
+    datasets.forEach(({ label, gen }) => {
+      READ_SIZES.forEach((size) => {
+        it(`[${label}] ${size}B`, async function () {
+          this.timeout(120_000);
+          const data = gen(size);
+          const expectedChecksum = BigInt(data.reduce((sum, b) => sum + b, 0));
+
+          const [rawStore, compStore, rentRaw] = await Promise.all([
+            createStore(program, provider),
+            createStore(program, provider),
+            provider.connection.getMinimumBalanceForRentExemption(
+              accountSpace(size)
+            ),
+          ]);
+
+          await uploadChunked(program, provider, rawStore, data);
+          await uploadChunked(program, provider, compStore, data);
+
+          let compSize = size;
+          let rentComp = rentRaw;
+          let compressOom = false;
+
+          try {
+            await program.methods
+              .compressStoredChunked()
+              .accounts({
+                store: compStore.publicKey,
+                payer: provider.wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+              })
+              .preInstructions([
+                ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+              ])
+              .rpc();
+
+            const compAccount = await program.account.dataStore.fetch(
+              compStore.publicKey
+            );
+            compSize = (compAccount.data as Buffer).length;
+            rentComp =
+              await provider.connection.getMinimumBalanceForRentExemption(
+                accountSpace(compSize)
+              );
+          } catch (e: any) {
+            const msg = e.message ?? "";
+            const logs: string[] = e.logs ?? e.simulationResponse?.logs ?? [];
+            if (
+              msg.includes("out of memory") ||
+              logs.some((l: string) => l.includes("out of memory"))
+            ) {
+              compressOom = true;
+            } else {
+              throw e;
+            }
+          }
+
+          const rawResult = await simulateWithLogs(
+            program.methods.readRaw().accounts({ store: rawStore.publicKey })
+          );
+
+          let fullResult: { cu: number | null; logs: string[] } = {
+            cu: null,
+            logs: [],
+          };
+          if (!compressOom) {
+            fullResult = await simulateWithLogs(
+              program.methods
+                .readChunkedFull()
+                .accounts({ store: compStore.publicKey })
+            );
+          }
+
+          const rawChecksum = parseChecksum(rawResult.logs);
+          assert.notStrictEqual(rawChecksum, null, "raw checksum missing");
+          assert.strictEqual(
+            rawChecksum,
+            expectedChecksum,
+            "raw checksum mismatch"
+          );
+
+          if (!compressOom) {
+            const fullChecksum = parseChecksum(fullResult.logs);
+            assert.notStrictEqual(
+              fullChecksum,
+              null,
+              "chunked full checksum missing"
+            );
+            assert.strictEqual(
+              fullChecksum,
+              expectedChecksum,
+              "chunked full roundtrip checksum mismatch"
+            );
+          }
+
+          const readRawCu = rawResult.cu;
+          const readChunkedFullCu = fullResult.cu;
+          const overhead =
+            readRawCu !== null && readChunkedFullCu !== null
+              ? readChunkedFullCu - readRawCu
+              : null;
+          const rentSaving = rentRaw - rentComp;
+          const ratio = (size / compSize).toFixed(2);
+
+          let breakEven: string;
+          if (compressOom) {
+            breakEven = "OOM";
+          } else if (rentSaving <= 0) {
+            breakEven = "harmful";
+          } else if (overhead !== null && overhead <= 0) {
+            breakEven = "always wins";
+          } else if (overhead !== null) {
+            const reads = Math.round(
+              (rentSaving * 1_000_000) / (overhead * PRIORITY_FEE_ULAMPORTS)
+            );
+            breakEven = reads.toLocaleString("en");
+          } else {
+            breakEven = "N/A";
+          }
+
+          chunkedReadFullResults.push({
+            label,
+            size,
+            compSize,
+            ratio,
+            readRawCu,
+            readChunkedFullCu,
+            overhead,
+            rentSaving,
+            breakEven,
+          });
+
+          console.log(
+            `  [${label}] ${size}B → ${compSize}B (${ratio}x)` +
+              `  rawRead=${readRawCu}  fullRead=${readChunkedFullCu}` +
+              `  overhead=${overhead}` +
+              `  rent${rentSaving >= 0 ? "+" : ""}${rentSaving}` +
+              `  break-even=${breakEven}`
+          );
+        });
+      });
+    });
+  });
+
+  // ── ChunkedLz4 per-chunk read benchmark ─────────────────────────────────
+
+  describe("READ (chunked_lz4 per-chunk)", () => {
+    const CHUNK_READ_SIZES = [1024, 4096];
+    datasets.forEach(({ label, gen }) => {
+      CHUNK_READ_SIZES.forEach((size) => {
+        it(`[${label}] ${size}B`, async function () {
+          this.timeout(120_000);
+          const data = gen(size);
+
+          const [rawStore, compStore] = await Promise.all([
+            createStore(program, provider),
+            createStore(program, provider),
+          ]);
+
+          await uploadChunked(program, provider, rawStore, data);
+          await uploadChunked(program, provider, compStore, data);
+
+          await program.methods
+            .compressStoredChunked()
+            .accounts({
+              store: compStore.publicKey,
+              payer: provider.wallet.publicKey,
+              systemProgram: SystemProgram.programId,
+            })
+            .preInstructions([
+              ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+            ])
+            .rpc();
+
+          const compAccount = await program.account.dataStore.fetch(
+            compStore.publicKey
+          );
+          const compSize = (compAccount.data as Buffer).length;
+          const chunkCount = Math.ceil(size / 4096);
+          const chunkIdx = 0;
+
+          const rawResult = await simulateWithLogs(
+            program.methods.readRaw().accounts({ store: rawStore.publicKey })
+          );
+          const chunkResult = await simulateWithLogs(
+            program.methods
+              .readChunkedChunk(chunkIdx)
+              .accounts({ store: compStore.publicKey })
+          );
+
+          const rawCu = rawResult.cu;
+          const chunkCu = chunkResult.cu;
+          const overhead =
+            rawCu !== null && chunkCu !== null ? chunkCu - rawCu : null;
+
+          chunkedReadChunkResults.push({
+            label,
+            size,
+            compSize,
+            chunkCount,
+            chunkIdx,
+            rawCu,
+            chunkCu,
+            overhead,
+          });
+
+          console.log(
+            `  [${label}] ${size}B → ${compSize}B  chunks=${chunkCount}` +
+              `  rawRead=${rawCu}  chunkRead=${chunkCu}` +
+              `  overhead=${overhead}`
+          );
+        });
+      });
+    });
+  });
+
   // ── Output ──────────────────────────────────────────────────────────────
 
   after("print results", () => {
     const p = (v: string | number, w: number) => String(v).padStart(w);
-    const fmt = (n: number | null) => (n !== null ? n.toLocaleString("en") : "OOM");
+    const fmt = (n: number | null) =>
+      n !== null ? n.toLocaleString("en") : "OOM";
 
     // Write table
     {
       console.log("\n── WRITE BENCHMARK (tx-limited) ──\n");
-      const cols = ["data-type", "size", "comp", "ratio", "store-raw CU", "store-comp CU", "overhead", "rent-saving", "break-even"];
+      const cols = [
+        "data-type",
+        "size",
+        "comp",
+        "ratio",
+        "store-raw CU",
+        "store-comp CU",
+        "overhead",
+        "rent-saving",
+        "break-even",
+      ];
       const W = [10, 5, 5, 6, 13, 14, 9, 12, 12];
       console.log(cols.map((c, i) => p(c, W[i])).join("  "));
       console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
@@ -449,7 +854,17 @@ describe("compress_bench", () => {
     // Read table
     {
       console.log("\n── READ BENCHMARK (account-limited) ──\n");
-      const cols = ["data-type", "size", "comp", "ratio", "read-raw CU", "read-comp CU", "overhead", "rent-saving", "break-even"];
+      const cols = [
+        "data-type",
+        "size",
+        "comp",
+        "ratio",
+        "read-raw CU",
+        "read-comp CU",
+        "overhead",
+        "rent-saving",
+        "break-even",
+      ];
       const W = [10, 6, 6, 6, 12, 13, 9, 12, 12];
       console.log(cols.map((c, i) => p(c, W[i])).join("  "));
       console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
@@ -475,6 +890,116 @@ describe("compress_bench", () => {
       }
     }
 
+    // ChunkedLz4 write table
+    {
+      console.log("\n── WRITE BENCHMARK (chunked_lz4) ──\n");
+      const cols = [
+        "data-type",
+        "size",
+        "comp",
+        "ratio",
+        "store-raw CU",
+        "store-chunk CU",
+        "overhead",
+        "rent-saving",
+        "break-even",
+      ];
+      const W = [10, 5, 5, 6, 13, 14, 9, 12, 12];
+      console.log(cols.map((c, i) => p(c, W[i])).join("  "));
+      console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+      for (const r of chunkedWriteResults) {
+        console.log(
+          [
+            p(r.label, W[0]),
+            p(r.size, W[1]),
+            p(r.compSize, W[2]),
+            p(r.ratio + "x", W[3]),
+            p(fmt(r.storeRawCu), W[4]),
+            p(fmt(r.storeChunkedCu), W[5]),
+            p(fmt(r.overhead), W[6]),
+            p(r.rentSaving, W[7]),
+            p(r.breakEven, W[8]),
+          ].join("  ")
+        );
+      }
+    }
+
+    // ChunkedLz4 full-read table
+    {
+      console.log("\n── READ BENCHMARK (chunked_lz4 full) ──\n");
+      const cols = [
+        "data-type",
+        "size",
+        "comp",
+        "ratio",
+        "read-raw CU",
+        "read-full CU",
+        "overhead",
+        "rent-saving",
+        "break-even",
+      ];
+      const W = [10, 6, 6, 6, 12, 13, 9, 12, 12];
+      console.log(cols.map((c, i) => p(c, W[i])).join("  "));
+      console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+      let lastLabel = "";
+      for (const r of chunkedReadFullResults) {
+        if (r.label !== lastLabel && lastLabel !== "") {
+          console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+        }
+        lastLabel = r.label;
+        console.log(
+          [
+            p(r.label, W[0]),
+            p(r.size, W[1]),
+            p(r.compSize, W[2]),
+            p(r.ratio + "x", W[3]),
+            p(fmt(r.readRawCu), W[4]),
+            p(fmt(r.readChunkedFullCu), W[5]),
+            p(fmt(r.overhead), W[6]),
+            p(r.rentSaving, W[7]),
+            p(r.breakEven, W[8]),
+          ].join("  ")
+        );
+      }
+    }
+
+    // ChunkedLz4 per-chunk table
+    {
+      console.log("\n── READ BENCHMARK (chunked_lz4 per-chunk) ──\n");
+      const cols = [
+        "data-type",
+        "size",
+        "comp",
+        "chunks",
+        "chunk-idx",
+        "read-raw CU",
+        "chunk CU",
+        "overhead",
+      ];
+      const W = [10, 6, 6, 7, 10, 12, 9, 9];
+      console.log(cols.map((c, i) => p(c, W[i])).join("  "));
+      console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+      let lastLabel = "";
+      for (const r of chunkedReadChunkResults) {
+        if (r.label !== lastLabel && lastLabel !== "") {
+          console.log("─".repeat(W.reduce((a, b) => a + b + 2, 0)));
+        }
+        lastLabel = r.label;
+        console.log(
+          [
+            p(r.label, W[0]),
+            p(r.size, W[1]),
+            p(r.compSize, W[2]),
+            p(r.chunkCount, W[3]),
+            p(r.chunkIdx, W[4]),
+            p(fmt(r.rawCu), W[5]),
+            p(fmt(r.chunkCu), W[6]),
+            p(fmt(r.overhead), W[7]),
+          ].join("  ")
+        );
+      }
+    }
+
     // JSON output
     const outDir = path.resolve(__dirname, "..", "results");
     fs.mkdirSync(outDir, { recursive: true });
@@ -484,6 +1009,9 @@ describe("compress_bench", () => {
         config: { priorityFeeUlamports: PRIORITY_FEE_ULAMPORTS },
         write: writeResults,
         read: readResults,
+        chunkedWrite: chunkedWriteResults,
+        chunkedReadFull: chunkedReadFullResults,
+        chunkedReadChunk: chunkedReadChunkResults,
       },
       null,
       2

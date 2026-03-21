@@ -29,7 +29,9 @@ fn generate_orderbook(n: usize) -> Vec<u8> {
             let mut t = [0u8; 32];
             // simulate a few distinct traders cycling through
             let seed = (i % 8) as u8;
-            t.iter_mut().enumerate().for_each(|(j, b)| *b = seed ^ (j as u8));
+            t.iter_mut()
+                .enumerate()
+                .for_each(|(j, b)| *b = seed ^ (j as u8));
             t
         };
         let quantity: u64 = 1 + (i as u64 % 100);
@@ -52,17 +54,12 @@ fn main() {
 
     let data: Vec<u8> = match args.get(1).map(|s| s.as_str()) {
         Some("orderbook") => {
-            let n: usize = args.get(2)
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(100);
+            let n: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(100);
             generate_orderbook(n)
         }
         Some(size_str) => {
-            let size: usize = size_str
-                .parse()
-                .expect("SIZE must be a positive integer");
-            let pattern =
-                b"Hello Solana! This is benchmark metadata for on-chain compression. ";
+            let size: usize = size_str.parse().expect("SIZE must be a positive integer");
+            let pattern = b"Hello Solana! This is benchmark metadata for on-chain compression. ";
             pattern.iter().cycle().take(size).copied().collect()
         }
         None => {

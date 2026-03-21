@@ -9,9 +9,10 @@ crate-type = ["cdylib", "lib"]
 name = "compress_bench"
 
 [features]
-default      = ["lz4", "discriminant"]
+default      = ["lz4", "discriminant", "chunked_lz4"]
 lz4          = ["densol/lz4"]
 discriminant = ["densol/discriminant"]
+chunked_lz4  = ["densol/chunked_lz4"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []

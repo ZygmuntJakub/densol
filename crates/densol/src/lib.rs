@@ -85,7 +85,7 @@ impl fmt::Display for CompressionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DecompressFailed => f.write_str("decompression failed: corrupt or wrong format"),
-            Self::InputTooLarge    => f.write_str("input exceeds maximum supported size"),
+            Self::InputTooLarge => f.write_str("input exceeds maximum supported size"),
         }
     }
 }
@@ -102,6 +102,11 @@ impl std::error::Error for CompressionError {}
 mod lz4_impl;
 #[cfg(feature = "lz4")]
 pub use lz4_impl::Lz4;
+
+#[cfg(feature = "chunked_lz4")]
+mod chunked_lz4_impl;
+#[cfg(feature = "chunked_lz4")]
+pub use chunked_lz4_impl::ChunkedLz4;
 
 // ── Derive re-export ──────────────────────────────────────────────────────────
 

@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
-use densol::Compress;
+#[cfg(feature = "chunked_lz4")]
+use densol::ChunkedLz4;
+use densol::{Compress, Compressor};
 
 declare_id!("AwLfrSLLSDht8b59VmyVhLGSg5vgdKyWMseKQpjSohKM");
 
@@ -150,6 +152,124 @@ pub mod compress_bench {
         );
         Ok(())
     }
+
+    /// Receive raw bytes, compress via ChunkedLz4<4096>, and store compressed in the account.
+    /// Write benchmark — compare CU against store_raw for the same data.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn store_chunked(ctx: Context<StoreChunked>, data: Vec<u8>) -> Result<()> {
+        let raw_len = data.len();
+        let compressed =
+            ChunkedLz4::<4096>::compress(&data).map_err(|_| error!(BenchError::CompressFailed))?;
+        let comp_len = compressed.len();
+        let store = &mut ctx.accounts.store;
+        store.data = compressed;
+
+        let new_len = 8 + 4 + store.data.len();
+        let info = store.to_account_info();
+        let rent = Rent::get()?;
+        let needed = rent.minimum_balance(new_len);
+        let current = info.lamports();
+
+        if needed > current {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: info.clone(),
+                    },
+                ),
+                needed - current,
+            )?;
+        }
+
+        info.resize(new_len)?;
+
+        msg!(
+            "store_chunked raw={} compressed={} ratio={:.2}x",
+            raw_len,
+            comp_len,
+            raw_len as f64 / comp_len as f64,
+        );
+        Ok(())
+    }
+
+    /// Compress existing raw data in the account in-place using ChunkedLz4<4096>.
+    /// Used to set up compressed accounts for read benchmarks at sizes
+    /// that exceed the transaction limit.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn compress_stored_chunked(ctx: Context<CompressStored>) -> Result<()> {
+        let raw = std::mem::take(&mut ctx.accounts.store.data);
+        let raw_len = raw.len();
+
+        let compressed =
+            ChunkedLz4::<4096>::compress(&raw).map_err(|_| error!(BenchError::CompressFailed))?;
+        drop(raw);
+        let comp_len = compressed.len();
+
+        ctx.accounts.store.data = compressed;
+
+        let new_len = 8 + 4 + ctx.accounts.store.data.len();
+        let info = ctx.accounts.store.to_account_info();
+        let rent = Rent::get()?;
+        let needed = rent.minimum_balance(new_len);
+        let current = info.lamports();
+
+        if needed > current {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: info.clone(),
+                    },
+                ),
+                needed - current,
+            )?;
+        }
+
+        info.resize(new_len)?;
+
+        msg!(
+            "compress_stored_chunked raw={} compressed={} ratio={:.2}x",
+            raw_len,
+            comp_len,
+            raw_len as f64 / comp_len as f64,
+        );
+        Ok(())
+    }
+
+    /// Read ChunkedLz4-compressed account data, decompress fully, and compute O(N) checksum.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn read_chunked_full(ctx: Context<ReadStore>) -> Result<()> {
+        let decompressed = ChunkedLz4::<4096>::decompress(&ctx.accounts.store.data)
+            .map_err(|_| error!(BenchError::DecompressFailed))?;
+        let checksum: u64 = decompressed.iter().map(|&b| b as u64).sum();
+        msg!(
+            "read_chunked_full compressed={} original={} checksum={}",
+            ctx.accounts.store.data.len(),
+            decompressed.len(),
+            checksum,
+        );
+        Ok(())
+    }
+
+    /// Decompress a single 4 KB chunk from a ChunkedLz4-compressed account.
+    /// O(chunk_size) heap — no OOM ceiling regardless of total account size.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn read_chunked_chunk(ctx: Context<ReadStore>, chunk_idx: u32) -> Result<()> {
+        let chunk =
+            ChunkedLz4::<4096>::decompress_chunk(&ctx.accounts.store.data, chunk_idx as usize)
+                .map_err(|_| error!(BenchError::DecompressFailed))?;
+        let checksum: u64 = chunk.iter().map(|&b| b as u64).sum();
+        msg!(
+            "read_chunked_chunk idx={} chunk_bytes={} checksum={}",
+            chunk_idx,
+            chunk.len(),
+            checksum,
+        );
+        Ok(())
+    }
 }
 
 // ── Accounts ──────────────────────────────────────────────────────────────────
@@ -174,6 +294,16 @@ pub struct StoreRaw<'info> {
 
 #[derive(Accounts)]
 pub struct StoreCompressed<'info> {
+    #[account(mut)]
+    pub store: Account<'info, DataStore>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[cfg(feature = "chunked_lz4")]
+#[derive(Accounts)]
+pub struct StoreChunked<'info> {
     #[account(mut)]
     pub store: Account<'info, DataStore>,
     #[account(mut)]
