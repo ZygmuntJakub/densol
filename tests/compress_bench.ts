@@ -101,6 +101,28 @@ async function uploadChunked(
   }
 }
 
+async function uploadLarge(
+  program: Program<CompressBench>,
+  provider: anchor.AnchorProvider,
+  store: Keypair,
+  data: Buffer
+): Promise<void> {
+  for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
+    const chunk = data.slice(offset, Math.min(offset + CHUNK_SIZE, data.length));
+    await program.methods
+      .appendRawLarge(chunk)
+      .accounts({
+        store: store.publicKey,
+        payer: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+      ])
+      .rpc();
+  }
+}
+
 async function realTxCu(
   provider: anchor.AnchorProvider,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -209,6 +231,13 @@ type ChunkedReadChunkRow = {
   overhead: number | null;
 };
 
+type LargeAccountResult = {
+  rawSize: number;
+  compSize: number;
+  chunkCount: number;
+  chunkCu: number | null;
+};
+
 // ── Benchmark suite ─────────────────────────────────────────────────────────
 
 describe("compress_bench", () => {
@@ -221,6 +250,7 @@ describe("compress_bench", () => {
   const chunkedWriteResults: ChunkedWriteRow[] = [];
   const chunkedReadFullResults: ChunkedReadFullRow[] = [];
   const chunkedReadChunkResults: ChunkedReadChunkRow[] = [];
+  let largeAccountResult: LargeAccountResult | null = null;
 
   const datasets: Array<{ label: string; gen: (n: number) => Buffer }> = [
     { label: "repetitive", gen: repetitive },
@@ -810,6 +840,57 @@ describe("compress_bench", () => {
     });
   });
 
+  // ── Large account demo (OpenBook-scale, 90 KB) ──────────────────────────
+
+  describe("LARGE ACCOUNT DEMO (OpenBook-shaped, 90 KB)", () => {
+    it("compresses 90 KB orderbook account on-chain and reads per-chunk", async function () {
+      this.timeout(300_000);
+      const SIZE = 90_952; // exact mainnet OpenBook BookSide size
+      const raw = orderbook(SIZE);
+
+      // 1. Init store + upload raw data via bypass-deserialization instruction
+      const store = await createStore(program, provider);
+      await uploadLarge(program, provider, store, raw);
+
+      // 2. Compress in-place (peak heap ~3 KB — no OOM)
+      await program.methods
+        .compressStoredChunkedLarge()
+        .accounts({
+          store: store.publicKey,
+          payer: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+        ])
+        .rpc({ commitment: "confirmed" });
+
+      // 3. Read resulting compressed account size
+      const compInfo = await provider.connection.getAccountInfo(
+        store.publicKey,
+        "confirmed"
+      );
+      const compSize = compInfo!.data.length - 12; // subtract 8B discriminator + 4B length
+
+      // 4. Measure per-chunk read CU (chunk 0; all chunks cost identically)
+      const chunkCount = Math.ceil(SIZE / 4096); // 23 for 90,952 B
+      const chunkSim = await program.methods
+        .readChunkedChunk(0)
+        .accounts({ store: store.publicKey })
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({ units: MAX_CU }),
+        ])
+        .simulate({ commitment: "confirmed" });
+      const chunkCu = chunkSim.raw.unitsConsumed ?? null;
+
+      largeAccountResult = { rawSize: SIZE, compSize, chunkCount, chunkCu };
+
+      console.log(
+        `  OpenBook 90 KB: raw=${SIZE} compressed=${compSize} ratio=${(SIZE / compSize).toFixed(2)}x chunks=${chunkCount} chunkReadCu=${chunkCu}`
+      );
+    });
+  });
+
   // ── Output ──────────────────────────────────────────────────────────────
 
   after("print results", () => {
@@ -1000,6 +1081,37 @@ describe("compress_bench", () => {
       }
     }
 
+    // Large account demo summary
+    if (largeAccountResult !== null) {
+      const r = largeAccountResult;
+      const ratio = (r.rawSize / r.compSize).toFixed(2);
+      // rent saving: (raw - compressed) bytes * 3480 * 2 lamports/byte (rent-exempt rate)
+      const rentSaving = (r.rawSize - r.compSize) * 3480 * 2;
+      const rentSol = (rentSaving / 1_000_000_000).toFixed(3);
+      const fmtCu = r.chunkCu !== null ? r.chunkCu.toLocaleString("en") : "N/A";
+      console.log("\n=== LARGE ACCOUNT DEMO (OpenBook-shaped) ===");
+      console.log(
+        [
+          "raw".padStart(10),
+          "compressed".padStart(12),
+          "ratio".padStart(8),
+          "chunks".padStart(7),
+          "chunk_read_cu".padStart(14),
+          "rent_saving".padStart(30),
+        ].join("  ")
+      );
+      console.log(
+        [
+          `${r.rawSize.toLocaleString("en")} B`.padStart(10),
+          `${r.compSize.toLocaleString("en")} B`.padStart(12),
+          `${ratio}x`.padStart(8),
+          String(r.chunkCount).padStart(7),
+          fmtCu.padStart(14),
+          `+${rentSaving.toLocaleString("en")} L (~${rentSol} SOL)`.padStart(30),
+        ].join("  ")
+      );
+    }
+
     // JSON output
     const outDir = path.resolve(__dirname, "..", "results");
     fs.mkdirSync(outDir, { recursive: true });
@@ -1012,6 +1124,7 @@ describe("compress_bench", () => {
         chunkedWrite: chunkedWriteResults,
         chunkedReadFull: chunkedReadFullResults,
         chunkedReadChunk: chunkedReadChunkResults,
+        largeAccountDemo: largeAccountResult,
       },
       null,
       2

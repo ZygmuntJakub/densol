@@ -270,6 +270,104 @@ pub mod compress_bench {
         );
         Ok(())
     }
+
+    /// Append raw bytes to a large account using zero-copy AccountInfo access.
+    /// Unlike storeRaw, this does NOT deserialize the full Vec<u8> — the existing
+    /// account bytes are never heap-allocated. Peak heap: only the data parameter (~800 B).
+    #[cfg(feature = "chunked_lz4")]
+    pub fn append_raw_large(ctx: Context<AppendRawLarge>, data: Vec<u8>) -> Result<()> {
+        let current_data_len: usize;
+        {
+            let acc = ctx.accounts.store.data.borrow();
+            require!(acc.len() >= 12, BenchError::CompressFailed);
+            current_data_len = u32::from_le_bytes(acc[8..12].try_into().unwrap()) as usize;
+        }
+
+        let new_data_len = current_data_len + data.len();
+        let new_account_len = 8 + 4 + new_data_len;
+
+        let info = ctx.accounts.store.to_account_info();
+        let rent = Rent::get()?;
+        let needed = rent.minimum_balance(new_account_len);
+        let current = info.lamports();
+        if needed > current {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: info.clone(),
+                    },
+                ),
+                needed - current,
+            )?;
+        }
+        info.resize(new_account_len)?;
+
+        {
+            let mut acc = ctx.accounts.store.data.borrow_mut();
+            acc[8..12].copy_from_slice(&(new_data_len as u32).to_le_bytes());
+            let start = 12 + current_data_len;
+            acc[start..start + data.len()].copy_from_slice(&data);
+        }
+
+        msg!("append_raw_large total_bytes={}", new_data_len);
+        Ok(())
+    }
+
+    /// Compress a large raw account in-place using ChunkedLz4<4096>.
+    /// Uses AccountInfo to bypass Anchor deserialization — the raw 90 KB
+    /// never lands on the heap. Peak heap: ~3 KB (compressed chunks + output).
+    #[cfg(feature = "chunked_lz4")]
+    pub fn compress_stored_chunked_large(ctx: Context<CompressStoredLarge>) -> Result<()> {
+        let raw_len: usize;
+        let compressed: Vec<u8>;
+        {
+            let data = ctx.accounts.store.data.borrow();
+            // Layout: [8B discriminator][4B Vec length LE][N bytes raw data]
+            require!(data.len() >= 12, BenchError::CompressFailed);
+            let raw = &data[12..];
+            raw_len = raw.len();
+            compressed = ChunkedLz4::<4096>::compress(raw)
+                .map_err(|_| error!(BenchError::CompressFailed))?;
+        } // borrow released
+
+        let comp_len = compressed.len();
+        let new_len = 8 + 4 + comp_len;
+
+        let info = ctx.accounts.store.to_account_info();
+        let rent = Rent::get()?;
+        let needed = rent.minimum_balance(new_len);
+        let current = info.lamports();
+        if needed > current {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: info.clone(),
+                    },
+                ),
+                needed - current,
+            )?;
+        }
+        info.resize(new_len)?;
+
+        {
+            let mut data = ctx.accounts.store.data.borrow_mut();
+            // discriminator (bytes 0..8) is preserved — do not overwrite
+            data[8..12].copy_from_slice(&(comp_len as u32).to_le_bytes());
+            data[12..12 + comp_len].copy_from_slice(&compressed);
+        }
+
+        msg!(
+            "compress_stored_chunked_large raw={} compressed={} ratio={:.2}x",
+            raw_len,
+            comp_len,
+            raw_len as f64 / comp_len as f64,
+        );
+        Ok(())
+    }
 }
 
 // ── Accounts ──────────────────────────────────────────────────────────────────
@@ -323,6 +421,28 @@ pub struct CompressStored<'info> {
 #[derive(Accounts)]
 pub struct ReadStore<'info> {
     pub store: Account<'info, DataStore>,
+}
+
+#[cfg(feature = "chunked_lz4")]
+#[derive(Accounts)]
+pub struct AppendRawLarge<'info> {
+    /// CHECK: owner verified by constraint; raw layout managed by instruction
+    #[account(mut, owner = crate::ID)]
+    pub store: AccountInfo<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[cfg(feature = "chunked_lz4")]
+#[derive(Accounts)]
+pub struct CompressStoredLarge<'info> {
+    /// CHECK: owner verified by constraint; discriminator checked in instruction
+    #[account(mut, owner = crate::ID)]
+    pub store: AccountInfo<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────

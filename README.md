@@ -187,6 +187,22 @@ The 90 KB orderbook row mirrors a realistic OpenBook `BookSide` account (90 KB o
 
 For structured data the per-chunk overhead is ~5,800–6,100 CU per 1 KB and ~22,800–23,200 CU per 4 KB chunk. The 1,400,000 CU budget can cover ~60 chunks of 1 KB or ~60 chunks of 4 KB in a single transaction — enough to scan a full 90 KB orderbook (23 × 4 KB chunks) with room to spare.
 
+### Real-world accounts (mainnet)
+
+Measured on live mainnet accounts fetched 2026-03-21 via `getAccountInfo`.
+
+| Account | Size | Compressed | Ratio | Rent saved |
+|---------|-----:|-----------:|------:|-----------:|
+| OpenBook v2 SOL/USDC Bids (BookSide) | 90,952 B | 1,693 B | **53.72x** | ~0.621 SOL |
+| OpenBook v2 SOL/USDC Asks (BookSide) | 90,952 B | 1,672 B | **54.40x** | ~0.621 SOL |
+| Drift User (inactive, mostly empty) | 4,376 B | 265 B | **16.51x** | ~0.029 SOL |
+| Drift User (semi-active) | 4,376 B | 811 B | **5.40x** | ~0.025 SOL |
+| Drift User (active) | 4,376 B | 1,671 B | **2.62x** | ~0.019 SOL |
+
+**Drift User accounts** (4.4 KB, Borsh) are a direct `densol` integration target — well within the 32 KB heap limit. Even the worst case (active user) compresses 2.6× and saves rent permanently.
+
+**OpenBook BookSide accounts** (90 KB, zero-copy `bytemuck::Pod`) show the rent-saving potential: ~54× compression, ~0.62 SOL per account. Plain `Lz4` cannot process 90 KB on-chain (heap limit). `ChunkedLz4<4096>` with `AccountInfo`-based bypass deserialization keeps peak heap at ~3 KB, making large-account on-chain compression feasible. BookSide stores data as a `bytemuck::Pod` struct with an exact binary layout — storing compressed bytes in the same account would break the layout invariant, so densol integration requires off-chain compression or program-side adoption.
+
 ### ChunkedLz4 — write and full-read CU
 
 > **Note:** For accounts ≤ 10 KB, prefer plain `Lz4` — it gives better compression and lower CU than `ChunkedLz4` at small sizes (the per-chunk header adds ~16 B and ~9 CU per write). The tables below are included for completeness and for cases where `ChunkedLz4` format is required at all sizes.
@@ -235,7 +251,6 @@ For structured data the per-chunk overhead is ~5,800–6,100 CU per 1 KB and ~22
 
 ## Missing pieces
 
-- Real-world data types (token metadata, game state, oracle feeds) instead of synthetic payloads
 - Mainnet priority fee sensitivity analysis (current benchmark assumes 1,000 µL/CU)
 - Alternative algorithms: heatshrink and lzss use ~256–512 B heap vs LZ4's 16 KB stack (see [ROADMAP.md](ROADMAP.md))
 
