@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-21T11:50:15.687Z",
+  "timestamp": "2026-03-22T07:31:50.559Z",
   "config": {
     "priorityFeeUlamports": 1000
   },
@@ -451,68 +451,68 @@
     {
       "label": "repetitive",
       "size": 256,
-      "compSize": 100,
-      "ratio": "2.56",
+      "compSize": 99,
+      "ratio": "2.59",
       "storeRawCu": 4840,
-      "storeChunkedCu": 9809,
-      "overhead": 4969,
-      "rentSaving": 1085760,
-      "breakEven": "218,507"
+      "storeChunkedCu": 10789,
+      "overhead": 5949,
+      "rentSaving": 1092720,
+      "breakEven": "183,681"
     },
     {
       "label": "repetitive",
       "size": 512,
-      "compSize": 101,
-      "ratio": "5.07",
+      "compSize": 100,
+      "ratio": "5.12",
       "storeRawCu": 4840,
-      "storeChunkedCu": 10355,
-      "overhead": 5515,
-      "rentSaving": 2860560,
-      "breakEven": "518,687"
+      "storeChunkedCu": 12829,
+      "overhead": 7989,
+      "rentSaving": 2867520,
+      "breakEven": "358,934"
     },
     {
       "label": "repetitive",
       "size": 800,
-      "compSize": 102,
-      "ratio": "7.84",
+      "compSize": 101,
+      "ratio": "7.92",
       "storeRawCu": 4840,
-      "storeChunkedCu": 10898,
-      "overhead": 6058,
-      "rentSaving": 4858080,
-      "breakEven": "801,928"
+      "storeChunkedCu": 15148,
+      "overhead": 10308,
+      "rentSaving": 4865040,
+      "breakEven": "471,967"
     },
     {
       "label": "json-like",
       "size": 256,
-      "compSize": 163,
-      "ratio": "1.57",
+      "compSize": 161,
+      "ratio": "1.59",
       "storeRawCu": 4840,
-      "storeChunkedCu": 13505,
-      "overhead": 8665,
-      "rentSaving": 647280,
-      "breakEven": "74,701"
+      "storeChunkedCu": 12879,
+      "overhead": 8039,
+      "rentSaving": 661200,
+      "breakEven": "82,249"
     },
     {
       "label": "json-like",
       "size": 512,
-      "compSize": 164,
-      "ratio": "3.12",
+      "compSize": 162,
+      "ratio": "3.16",
       "storeRawCu": 4840,
-      "storeChunkedCu": 14017,
-      "overhead": 9177,
-      "rentSaving": 2422080,
-      "breakEven": "263,929"
+      "storeChunkedCu": 14942,
+      "overhead": 10102,
+      "rentSaving": 2436000,
+      "breakEven": "241,140"
     },
     {
       "label": "json-like",
       "size": 800,
-      "compSize": 165,
-      "ratio": "4.85",
+      "compSize": 163,
+      "ratio": "4.91",
       "storeRawCu": 4840,
-      "storeChunkedCu": 14626,
-      "overhead": 9786,
-      "rentSaving": 4419600,
-      "breakEven": "451,625"
+      "storeChunkedCu": 17293,
+      "overhead": 12453,
+      "rentSaving": 4433520,
+      "breakEven": "356,020"
     },
     {
       "label": "random",
@@ -520,8 +520,8 @@
       "compSize": 279,
       "ratio": "0.92",
       "storeRawCu": 4840,
-      "storeChunkedCu": 12057,
-      "overhead": 7217,
+      "storeChunkedCu": 14525,
+      "overhead": 9685,
       "rentSaving": -160080,
       "breakEven": "harmful"
     },
@@ -531,8 +531,8 @@
       "compSize": 536,
       "ratio": "0.96",
       "storeRawCu": 4840,
-      "storeChunkedCu": 14698,
-      "overhead": 9858,
+      "storeChunkedCu": 22476,
+      "overhead": 17636,
       "rentSaving": -167040,
       "breakEven": "harmful"
     },
@@ -542,199 +542,199 @@
       "compSize": 826,
       "ratio": "0.97",
       "storeRawCu": 4840,
-      "storeChunkedCu": 16857,
-      "overhead": 12017,
+      "storeChunkedCu": 31433,
+      "overhead": 26593,
       "rentSaving": -180960,
       "breakEven": "harmful"
     },
     {
       "label": "orderbook",
       "size": 256,
-      "compSize": 54,
-      "ratio": "4.74",
+      "compSize": 53,
+      "ratio": "4.83",
       "storeRawCu": 4840,
-      "storeChunkedCu": 8662,
-      "overhead": 3822,
-      "rentSaving": 1405920,
-      "breakEven": "367,849"
+      "storeChunkedCu": 9953,
+      "overhead": 5113,
+      "rentSaving": 1412880,
+      "breakEven": "276,331"
     },
     {
       "label": "orderbook",
       "size": 512,
-      "compSize": 55,
-      "ratio": "9.31",
+      "compSize": 54,
+      "ratio": "9.48",
       "storeRawCu": 4840,
-      "storeChunkedCu": 9208,
-      "overhead": 4368,
-      "rentSaving": 3180720,
-      "breakEven": "728,187"
+      "storeChunkedCu": 12016,
+      "overhead": 7176,
+      "rentSaving": 3187680,
+      "breakEven": "444,214"
     },
     {
       "label": "orderbook",
       "size": 800,
-      "compSize": 56,
-      "ratio": "14.29",
+      "compSize": 55,
+      "ratio": "14.55",
       "storeRawCu": 4840,
-      "storeChunkedCu": 9812,
-      "overhead": 4972,
-      "rentSaving": 5178240,
-      "breakEven": "1,041,480"
+      "storeChunkedCu": 14398,
+      "overhead": 9558,
+      "rentSaving": 5185200,
+      "breakEven": "542,498"
     }
   ],
   "chunkedReadFull": [
     {
       "label": "repetitive",
       "size": 256,
-      "compSize": 100,
-      "ratio": "2.56",
+      "compSize": 99,
+      "ratio": "2.59",
       "readRawCu": 4021,
-      "readChunkedFullCu": 5783,
-      "overhead": 1762,
-      "rentSaving": 1085760,
-      "breakEven": "616,209"
+      "readChunkedFullCu": 5641,
+      "overhead": 1620,
+      "rentSaving": 1092720,
+      "breakEven": "674,519"
     },
     {
       "label": "repetitive",
       "size": 512,
-      "compSize": 101,
-      "ratio": "5.07",
+      "compSize": 100,
+      "ratio": "5.12",
       "readRawCu": 6581,
-      "readChunkedFullCu": 9762,
-      "overhead": 3181,
-      "rentSaving": 2860560,
-      "breakEven": "899,264"
+      "readChunkedFullCu": 9631,
+      "overhead": 3050,
+      "rentSaving": 2867520,
+      "breakEven": "940,170"
     },
     {
       "label": "repetitive",
       "size": 1024,
-      "compSize": 103,
-      "ratio": "9.94",
+      "compSize": 102,
+      "ratio": "10.04",
       "readRawCu": 11705,
-      "readChunkedFullCu": 17724,
-      "overhead": 6019,
-      "rentSaving": 6410160,
-      "breakEven": "1,064,988"
+      "readChunkedFullCu": 17593,
+      "overhead": 5888,
+      "rentSaving": 6417120,
+      "breakEven": "1,089,864"
     },
     {
       "label": "repetitive",
       "size": 2048,
-      "compSize": 107,
-      "ratio": "19.14",
+      "compSize": 106,
+      "ratio": "19.32",
       "readRawCu": 21949,
-      "readChunkedFullCu": 33644,
-      "overhead": 11695,
-      "rentSaving": 13509360,
-      "breakEven": "1,155,140"
+      "readChunkedFullCu": 33513,
+      "overhead": 11564,
+      "rentSaving": 13516320,
+      "breakEven": "1,168,827"
     },
     {
       "label": "repetitive",
       "size": 4096,
-      "compSize": 115,
-      "ratio": "35.62",
+      "compSize": 114,
+      "ratio": "35.93",
       "readRawCu": 42441,
-      "readChunkedFullCu": 65482,
-      "overhead": 23041,
-      "rentSaving": 27707760,
-      "breakEven": "1,202,542"
+      "readChunkedFullCu": 65351,
+      "overhead": 22910,
+      "rentSaving": 27714720,
+      "breakEven": "1,209,722"
     },
     {
       "label": "repetitive",
       "size": 8192,
-      "compSize": 8192,
-      "ratio": "1.00",
+      "compSize": 219,
+      "ratio": "37.41",
       "readRawCu": 83433,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 128944,
+      "overhead": 45511,
+      "rentSaving": 55492080,
+      "breakEven": "1,219,311"
     },
     {
       "label": "repetitive",
       "size": 10240,
-      "compSize": 10240,
-      "ratio": "1.00",
+      "compSize": 316,
+      "ratio": "32.41",
       "readRawCu": 103940,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 160710,
+      "overhead": 56770,
+      "rentSaving": 69071040,
+      "breakEven": "1,216,682"
     },
     {
       "label": "json-like",
       "size": 256,
-      "compSize": 163,
-      "ratio": "1.57",
+      "compSize": 161,
+      "ratio": "1.59",
       "readRawCu": 4021,
-      "readChunkedFullCu": 5744,
-      "overhead": 1723,
-      "rentSaving": 647280,
-      "breakEven": "375,670"
+      "readChunkedFullCu": 5618,
+      "overhead": 1597,
+      "rentSaving": 661200,
+      "breakEven": "414,026"
     },
     {
       "label": "json-like",
       "size": 512,
-      "compSize": 164,
-      "ratio": "3.12",
+      "compSize": 162,
+      "ratio": "3.16",
       "readRawCu": 6581,
-      "readChunkedFullCu": 9722,
-      "overhead": 3141,
-      "rentSaving": 2422080,
-      "breakEven": "771,117"
+      "readChunkedFullCu": 9596,
+      "overhead": 3015,
+      "rentSaving": 2436000,
+      "breakEven": "807,960"
     },
     {
       "label": "json-like",
       "size": 1024,
-      "compSize": 166,
-      "ratio": "6.17",
+      "compSize": 164,
+      "ratio": "6.24",
       "readRawCu": 11705,
-      "readChunkedFullCu": 17684,
-      "overhead": 5979,
-      "rentSaving": 5971680,
-      "breakEven": "998,776"
+      "readChunkedFullCu": 17558,
+      "overhead": 5853,
+      "rentSaving": 5985600,
+      "breakEven": "1,022,655"
     },
     {
       "label": "json-like",
       "size": 2048,
-      "compSize": 170,
-      "ratio": "12.05",
+      "compSize": 168,
+      "ratio": "12.19",
       "readRawCu": 21949,
-      "readChunkedFullCu": 33604,
-      "overhead": 11655,
-      "rentSaving": 13070880,
-      "breakEven": "1,121,483"
+      "readChunkedFullCu": 33478,
+      "overhead": 11529,
+      "rentSaving": 13084800,
+      "breakEven": "1,134,947"
     },
     {
       "label": "json-like",
       "size": 4096,
-      "compSize": 178,
-      "ratio": "23.01",
+      "compSize": 176,
+      "ratio": "23.27",
       "readRawCu": 42441,
-      "readChunkedFullCu": 65442,
-      "overhead": 23001,
-      "rentSaving": 27269280,
-      "breakEven": "1,185,569"
+      "readChunkedFullCu": 65316,
+      "overhead": 22875,
+      "rentSaving": 27283200,
+      "breakEven": "1,192,708"
     },
     {
       "label": "json-like",
       "size": 8192,
-      "compSize": 8192,
-      "ratio": "1.00",
+      "compSize": 349,
+      "ratio": "23.47",
       "readRawCu": 83433,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 128870,
+      "overhead": 45437,
+      "rentSaving": 54587280,
+      "breakEven": "1,201,384"
     },
     {
       "label": "json-like",
       "size": 10240,
-      "compSize": 10240,
-      "ratio": "1.00",
+      "compSize": 508,
+      "ratio": "20.16",
       "readRawCu": 103940,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 160609,
+      "overhead": 56669,
+      "rentSaving": 67734720,
+      "breakEven": "1,195,269"
     },
     {
       "label": "random",
@@ -742,8 +742,8 @@
       "compSize": 279,
       "ratio": "0.92",
       "readRawCu": 4021,
-      "readChunkedFullCu": 4785,
-      "overhead": 764,
+      "readChunkedFullCu": 4648,
+      "overhead": 627,
       "rentSaving": -160080,
       "breakEven": "harmful"
     },
@@ -753,8 +753,8 @@
       "compSize": 536,
       "ratio": "0.96",
       "readRawCu": 6581,
-      "readChunkedFullCu": 7468,
-      "overhead": 887,
+      "readChunkedFullCu": 7331,
+      "overhead": 750,
       "rentSaving": -167040,
       "breakEven": "harmful"
     },
@@ -764,8 +764,8 @@
       "compSize": 1050,
       "ratio": "0.98",
       "readRawCu": 11709,
-      "readChunkedFullCu": 12846,
-      "overhead": 1137,
+      "readChunkedFullCu": 12709,
+      "overhead": 1000,
       "rentSaving": -180960,
       "breakEven": "harmful"
     },
@@ -775,8 +775,8 @@
       "compSize": 2078,
       "ratio": "0.99",
       "readRawCu": 21949,
-      "readChunkedFullCu": 23578,
-      "overhead": 1629,
+      "readChunkedFullCu": 23441,
+      "overhead": 1492,
       "rentSaving": -208800,
       "breakEven": "harmful"
     },
@@ -786,21 +786,21 @@
       "compSize": 4135,
       "ratio": "0.99",
       "readRawCu": 42441,
-      "readChunkedFullCu": 45071,
-      "overhead": 2630,
+      "readChunkedFullCu": 44934,
+      "overhead": 2493,
       "rentSaving": -271440,
       "breakEven": "harmful"
     },
     {
       "label": "random",
       "size": 8192,
-      "compSize": 8192,
-      "ratio": "1.00",
+      "compSize": 8261,
+      "ratio": "0.99",
       "readRawCu": 83444,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 88139,
+      "overhead": 4695,
+      "rentSaving": -480240,
+      "breakEven": "harmful"
     },
     {
       "label": "random",
@@ -816,121 +816,121 @@
     {
       "label": "orderbook",
       "size": 256,
-      "compSize": 54,
-      "ratio": "4.74",
+      "compSize": 53,
+      "ratio": "4.83",
       "readRawCu": 4010,
-      "readChunkedFullCu": 6083,
-      "overhead": 2073,
-      "rentSaving": 1405920,
-      "breakEven": "678,205"
+      "readChunkedFullCu": 5951,
+      "overhead": 1941,
+      "rentSaving": 1412880,
+      "breakEven": "727,913"
     },
     {
       "label": "orderbook",
       "size": 512,
-      "compSize": 55,
-      "ratio": "9.31",
+      "compSize": 54,
+      "ratio": "9.48",
       "readRawCu": 6570,
-      "readChunkedFullCu": 10062,
-      "overhead": 3492,
-      "rentSaving": 3180720,
-      "breakEven": "910,859"
+      "readChunkedFullCu": 9930,
+      "overhead": 3360,
+      "rentSaving": 3187680,
+      "breakEven": "948,714"
     },
     {
       "label": "orderbook",
       "size": 1024,
-      "compSize": 57,
-      "ratio": "17.96",
+      "compSize": 56,
+      "ratio": "18.29",
       "readRawCu": 11705,
-      "readChunkedFullCu": 18035,
-      "overhead": 6330,
-      "rentSaving": 6730320,
-      "breakEven": "1,063,242"
+      "readChunkedFullCu": 17903,
+      "overhead": 6198,
+      "rentSaving": 6737280,
+      "breakEven": "1,087,009"
     },
     {
       "label": "orderbook",
       "size": 2048,
-      "compSize": 61,
-      "ratio": "33.57",
+      "compSize": 60,
+      "ratio": "34.13",
       "readRawCu": 21945,
-      "readChunkedFullCu": 33951,
-      "overhead": 12006,
-      "rentSaving": 13829520,
-      "breakEven": "1,151,884"
+      "readChunkedFullCu": 33819,
+      "overhead": 11874,
+      "rentSaving": 13836480,
+      "breakEven": "1,165,275"
     },
     {
       "label": "orderbook",
       "size": 4096,
-      "compSize": 69,
-      "ratio": "59.36",
+      "compSize": 68,
+      "ratio": "60.24",
       "readRawCu": 42437,
-      "readChunkedFullCu": 65789,
-      "overhead": 23352,
-      "rentSaving": 28027920,
-      "breakEven": "1,200,236"
+      "readChunkedFullCu": 65657,
+      "overhead": 23220,
+      "rentSaving": 28034880,
+      "breakEven": "1,207,359"
     },
     {
       "label": "orderbook",
       "size": 8192,
-      "compSize": 8192,
-      "ratio": "1.00",
+      "compSize": 124,
+      "ratio": "66.06",
       "readRawCu": 83433,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 129597,
+      "overhead": 46164,
+      "rentSaving": 56153280,
+      "breakEven": "1,216,387"
     },
     {
       "label": "orderbook",
       "size": 10240,
-      "compSize": 10240,
-      "ratio": "1.00",
+      "compSize": 179,
+      "ratio": "57.21",
       "readRawCu": 103940,
-      "readChunkedFullCu": null,
-      "overhead": null,
-      "rentSaving": 0,
-      "breakEven": "OOM"
+      "readChunkedFullCu": 161710,
+      "overhead": 57770,
+      "rentSaving": 70024560,
+      "breakEven": "1,212,127"
     }
   ],
   "chunkedReadChunk": [
     {
       "label": "repetitive",
       "size": 1024,
-      "compSize": 103,
+      "compSize": 102,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 11705,
-      "chunkCu": 17520,
-      "overhead": 5815
+      "chunkCu": 17526,
+      "overhead": 5821
     },
     {
       "label": "repetitive",
       "size": 4096,
-      "compSize": 115,
+      "compSize": 114,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 42441,
-      "chunkCu": 65272,
-      "overhead": 22831
+      "chunkCu": 65278,
+      "overhead": 22837
     },
     {
       "label": "json-like",
       "size": 1024,
-      "compSize": 166,
+      "compSize": 164,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 11705,
-      "chunkCu": 17480,
-      "overhead": 5775
+      "chunkCu": 17491,
+      "overhead": 5786
     },
     {
       "label": "json-like",
       "size": 4096,
-      "compSize": 178,
+      "compSize": 176,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 42441,
-      "chunkCu": 65232,
-      "overhead": 22791
+      "chunkCu": 65243,
+      "overhead": 22802
     },
     {
       "label": "random",
@@ -955,22 +955,91 @@
     {
       "label": "orderbook",
       "size": 1024,
-      "compSize": 57,
+      "compSize": 56,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 11705,
-      "chunkCu": 17842,
-      "overhead": 6137
+      "chunkCu": 17847,
+      "overhead": 6142
     },
     {
       "label": "orderbook",
       "size": 4096,
-      "compSize": 69,
+      "compSize": 68,
       "chunkCount": 1,
       "chunkIdx": 0,
       "rawCu": 42437,
-      "chunkCu": 65590,
-      "overhead": 23153
+      "chunkCu": 65595,
+      "overhead": 23158
+    }
+  ],
+  "largeAccountDemo": {
+    "rawSize": 90952,
+    "compSize": 1386,
+    "chunkCount": 23,
+    "compCu": 764131,
+    "chunkCu": 65595
+  },
+  "heapCeiling": [
+    {
+      "path": "account",
+      "size": 8192,
+      "success": true,
+      "compSize": 8261
+    },
+    {
+      "path": "account",
+      "size": 10240,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "account",
+      "size": 12288,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "account",
+      "size": 14336,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "account",
+      "size": 16384,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "accountinfo",
+      "size": 12288,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "accountinfo",
+      "size": 16384,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "accountinfo",
+      "size": 20480,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "accountinfo",
+      "size": 24576,
+      "success": false,
+      "compSize": null
+    },
+    {
+      "path": "accountinfo",
+      "size": 28672,
+      "success": false,
+      "compSize": null
     }
   ]
 }

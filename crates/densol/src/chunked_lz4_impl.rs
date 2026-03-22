@@ -62,40 +62,54 @@ impl<const N: usize> Compressor for ChunkedLz4<N> {
         let chunk_count = input.len().div_ceil(N);
         debug_assert!(chunk_count <= u32::MAX as usize);
 
-        // Compress each chunk independently (off-chain, heap is not a concern).
-        let compressed_chunks: Vec<Vec<u8>> = input
-            .chunks(N)
-            .map(lz4_flex::block::compress_prepend_size)
-            .collect();
-
-        let data_len: usize = compressed_chunks.iter().map(|c| c.len()).sum();
-
-        // discriminant(0|1) + header(8) + index(chunk_count * 8) + data_region
+        // Wire layout:
+        //   [discriminant?: 1B] [chunk_count: 4B] [original_len: 4B]
+        //   [index: chunk_count × 8B]  ← (offset: u32, block_len: u32) per chunk
+        //   [data region: lz4 blocks concatenated]
+        //
+        // Each lz4 block = [4B prepended original-chunk-len LE][LZ4 block data],
+        // compatible with lz4_flex::block::decompress_size_prepended.
+        //
+        // SBF heap strategy: lz4_flex::block::compress_into allocates a new
+        // HashTable4KU16 (Box<[u16; 4096]> = 8192 B) per call.  On the SBF bump
+        // allocator (no free), K chunks strand K × 8192 B — for K = 23 that is
+        // 188 KB, far exceeding the 32 KB heap limit.
+        //
+        // Fix: use lz4_compress_chunk(), our own LZ4 block compressor that takes
+        // a caller-supplied &mut [u16] hash table.  Allocate the table ONCE
+        // (8192 B) and clear it between chunks with fill(0) — no extra allocation.
         #[cfg(feature = "discriminant")]
-        let capacity = 1 + 8 + chunk_count * 8 + data_len;
+        let index_base = 9usize; // 1 (discriminant) + 4 (chunk_count) + 4 (original_len)
         #[cfg(not(feature = "discriminant"))]
-        let capacity = 8 + chunk_count * 8 + data_len;
+        let index_base = 8usize; // 4 (chunk_count) + 4 (original_len)
 
-        let mut out = Vec::with_capacity(capacity);
+        let header_len = index_base + chunk_count * 8;
+        let mut out = Vec::with_capacity(header_len);
 
         #[cfg(feature = "discriminant")]
         out.push(Self::DISCRIMINANT);
 
-        // Header
         out.extend_from_slice(&(chunk_count as u32).to_le_bytes());
         out.extend_from_slice(&(input.len() as u32).to_le_bytes());
 
-        // Index: (offset, compressed_len) per chunk; offsets relative to data region.
-        let mut offset: u32 = 0;
-        for chunk in &compressed_chunks {
-            out.extend_from_slice(&offset.to_le_bytes());
-            out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
-            offset = offset.wrapping_add(chunk.len() as u32);
-        }
+        // Zero-fill the index; entries are patched below as each chunk is compressed.
+        out.resize(header_len, 0u8);
 
-        // Data region: concatenated lz4 blocks.
-        for chunk in &compressed_chunks {
-            out.extend_from_slice(chunk);
+        // One hash-table allocation for all chunks.
+        let mut table = alloc::vec![0u16; LZ4_HASH_SIZE];
+
+        let mut data_offset: u32 = 0;
+        for (i, chunk) in input.chunks(N).enumerate() {
+            table.fill(0); // clear between chunks — no allocation
+            let block_start = out.len();
+            lz4_compress_chunk(chunk, &mut table, &mut out);
+            let block_len = (out.len() - block_start) as u32;
+
+            // Patch this chunk's index entry in-place.
+            let entry = index_base + i * 8;
+            out[entry..entry + 4].copy_from_slice(&data_offset.to_le_bytes());
+            out[entry + 4..entry + 8].copy_from_slice(&block_len.to_le_bytes());
+            data_offset = data_offset.wrapping_add(block_len);
         }
 
         Ok(out)
@@ -106,7 +120,7 @@ impl<const N: usize> Compressor for ChunkedLz4<N> {
         let data = strip_discriminant(input, Self::DISCRIMINANT)?;
         let (chunk_count, original_len) = parse_header(data)?;
 
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(original_len);
         for i in 0..chunk_count {
             let chunk = read_chunk(data, chunk_count, i)?;
             out.extend_from_slice(&chunk);
@@ -129,6 +143,161 @@ fn strip_discriminant(input: &[u8], expected: u8) -> Result<&[u8], CompressionEr
         _ => Err(CompressionError::DecompressFailed),
     }
 }
+
+// ── Minimal LZ4 block compressor ─────────────────────────────────────────────
+//
+// Produces output compatible with lz4_flex::block::decompress_size_prepended:
+//   [4B LE: original chunk length][LZ4 block data]
+//
+// The LZ4 block format is a sequence of (literals + match) pairs, terminated
+// by a final literals-only sequence.  Full spec:
+//   https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md
+//
+// We use a caller-supplied hash table so that ChunkedLz4::compress() can
+// allocate it once and clear it between chunks (fill(0)), paying 8192 B of
+// heap exactly once instead of once per chunk.
+
+const LZ4_HASH_SIZE: usize = 4096; // must be a power of 2
+const LZ4_HASH_BITS: u32 = 12; // log2(LZ4_HASH_SIZE)
+const LZ4_MINMATCH: usize = 4;
+const LZ4_MFLIMIT: usize = 12; // last 12 bytes of input are always literals
+const LZ4_LASTLITERALS: usize = 5; // matches may not extend into the last 5 bytes
+
+/// Compress `input` into `out` using LZ4 block format.
+///
+/// `table` (length == LZ4_HASH_SIZE) must be zeroed by the caller before each
+/// call; it is reused across chunks to avoid repeated heap allocation on the
+/// SBF bump allocator.
+fn lz4_compress_chunk(input: &[u8], table: &mut [u16], out: &mut Vec<u8>) {
+    debug_assert_eq!(table.len(), LZ4_HASH_SIZE);
+
+    // Prepend original chunk length (lz4_flex's "size-prepended" wire format).
+    out.extend_from_slice(&(input.len() as u32).to_le_bytes());
+
+    let n = input.len();
+    if n < LZ4_MINMATCH {
+        // Input too short for any match — emit everything as a literal run.
+        lz4_push_lits(out, input);
+        return;
+    }
+
+    // Positions within the last LZ4_MFLIMIT bytes must not start a new match.
+    let search_limit = n.saturating_sub(LZ4_MFLIMIT);
+    // Matches may not extend into the last LZ4_LASTLITERALS bytes.
+    let match_limit = n.saturating_sub(LZ4_LASTLITERALS);
+
+    let mut ip = 0usize; // current position in `input`
+    let mut anchor = 0usize; // start of the current literal run
+
+    loop {
+        if ip >= search_limit {
+            break;
+        }
+
+        // Hash 4 bytes at `ip` and look up the hash table.
+        // SAFETY: ip < search_limit = n - LZ4_MFLIMIT (12), so ip + 3 < n.
+        let seq = unsafe { lz4_read4_unc(input, ip) };
+        let h = lz4_hash(seq);
+        let candidate = table[h] as usize;
+        table[h] = ip as u16; // record current position
+
+        // Valid match: candidate is before ip, close enough, and bytes agree.
+        if candidate < ip {
+            let offset = ip - candidate;
+            // SAFETY for all unsafe reads below:
+            //   ip < search_limit = n - LZ4_MFLIMIT (n >= 12 or early-return).
+            //   So ip + 3 < n - 8, well within bounds.
+            //   candidate < ip, so candidate + 3 < ip + 3 < n.
+            if offset <= 0xFFFF && unsafe { lz4_read4_unc(input, candidate) } == seq {
+                // Extend the match 4 bytes at a time, then byte-by-byte for the tail.
+                // Avoids ~4× the loop iterations of a byte-at-a-time approach.
+                let mut ml = LZ4_MINMATCH;
+                // Need room for a 4-byte read at ip+ml and candidate+ml.
+                let word_limit = match_limit.saturating_sub(3);
+                while ip + ml < word_limit {
+                    // SAFETY: ip + ml + 3 < word_limit + 3 <= match_limit <= n - LZ4_LASTLITERALS,
+                    //         and match_limit <= n - 5, so ip + ml + 3 < n.
+                    //         candidate + ml < ip + ml, same upper bound holds.
+                    let wi = unsafe { lz4_read4_unc(input, ip + ml) };
+                    let wc = unsafe { lz4_read4_unc(input, candidate + ml) };
+                    if wi != wc {
+                        // Find first differing byte via trailing zeros of XOR.
+                        ml += (wi ^ wc).trailing_zeros() as usize / 8;
+                        break;
+                    }
+                    ml += 4;
+                }
+                // Extend any remaining bytes.
+                while ip + ml < match_limit && input[candidate + ml] == input[ip + ml] {
+                    ml += 1;
+                }
+
+                lz4_emit_seq(out, &input[anchor..ip], offset as u16, ml);
+                ip += ml;
+                anchor = ip;
+                continue;
+            }
+        }
+
+        ip += 1;
+    }
+
+    // Emit the final literal run (no match follows).
+    lz4_push_lits(out, &input[anchor..]);
+}
+
+#[inline(always)]
+fn lz4_read4(data: &[u8], pos: usize) -> u32 {
+    u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+}
+
+/// Unchecked 4-byte LE read — caller must ensure `pos + 3 < data.len()`.
+#[inline(always)]
+unsafe fn lz4_read4_unc(data: &[u8], pos: usize) -> u32 {
+    core::ptr::read_unaligned(data.as_ptr().add(pos) as *const u32)
+}
+
+#[inline(always)]
+fn lz4_hash(seq: u32) -> usize {
+    (seq.wrapping_mul(2654435761u32) >> (32 - LZ4_HASH_BITS)) as usize
+}
+
+/// Emit one LZ4 sequence: `lits` literal bytes followed by a back-reference.
+fn lz4_emit_seq(out: &mut Vec<u8>, lits: &[u8], offset: u16, match_len: usize) {
+    let ll = lits.len();
+    let ml_extra = match_len - LZ4_MINMATCH;
+    out.push(((ll.min(15) as u8) << 4) | (ml_extra.min(15) as u8));
+    if ll >= 15 {
+        lz4_push_extra(out, ll - 15);
+    }
+    out.extend_from_slice(lits);
+    out.push(offset as u8);
+    out.push((offset >> 8) as u8);
+    if ml_extra >= 15 {
+        lz4_push_extra(out, ml_extra - 15);
+    }
+}
+
+/// Emit a final literal-only LZ4 sequence (no match offset follows).
+fn lz4_push_lits(out: &mut Vec<u8>, lits: &[u8]) {
+    let n = lits.len();
+    out.push((n.min(15) as u8) << 4); // match nibble = 0
+    if n >= 15 {
+        lz4_push_extra(out, n - 15);
+    }
+    out.extend_from_slice(lits);
+}
+
+/// Encode a run-length extension (series of bytes summing to `remaining`).
+fn lz4_push_extra(out: &mut Vec<u8>, mut remaining: usize) {
+    while remaining >= 255 {
+        out.push(255);
+        remaining -= 255;
+    }
+    out.push(remaining as u8);
+}
+
+// ── Decompression helpers ─────────────────────────────────────────────────────
 
 #[cfg(not(feature = "discriminant"))]
 fn strip_discriminant(input: &[u8], _expected: u8) -> Result<&[u8], CompressionError> {

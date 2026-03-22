@@ -129,44 +129,44 @@ The wire format is N-agnostic: data compressed with `ChunkedLz4<512>` can be dec
 
 | Data type | Size | Compressed | Ratio | Chunks | Rent saving |
 |-----------|-----:|-----------:|------:|-------:|------------:|
-| repetitive | 32 KB | 857 B | 38.24x | 8 | +222,100,560 L |
-| json-like | 32 KB | 1,375 B | 23.83x | 8 | +218,495,280 L |
+| repetitive | 32 KB | 849 B | 38.60x | 8 | +222,156,240 L |
+| json-like | 32 KB | 1,358 B | 24.13x | 8 | +218,613,600 L |
 | pseudo-random | 32 KB | 33,017 B | 0.99x | 8 | -1,733,040 L |
-| orderbook | 32 KB | 498 B | 65.80x | 8 | +224,599,200 L |
-| repetitive | 64 KB | 1,705 B | 38.44x | 16 | +444,263,760 L |
-| json-like | 64 KB | 2,738 B | 23.94x | 16 | +437,074,080 L |
+| orderbook | 32 KB | 490 B | 66.87x | 8 | +224,654,880 L |
+| repetitive | 64 KB | 1,689 B | 38.80x | 16 | +444,375,120 L |
+| json-like | 64 KB | 2,702 B | 24.25x | 16 | +437,324,640 L |
 | pseudo-random | 64 KB | 66,025 B | 0.99x | 16 | -3,403,440 L |
-| orderbook | 64 KB | 993 B | 66.00x | 16 | +449,219,280 L |
-| repetitive | 90 KB | 2,439 B | 37.79x | 23 | +624,458,160 L |
-| json-like | 90 KB | 3,921 B | 23.50x | 23 | +614,143,440 L |
+| orderbook | 64 KB | 977 B | 67.08x | 16 | +449,330,640 L |
+| repetitive | 90 KB | 2,416 B | 38.15x | 23 | +624,618,240 L |
+| json-like | 90 KB | 3,874 B | 23.79x | 23 | +614,470,560 L |
 | pseudo-random | 90 KB | 92,850 B | 0.99x | 23 | -4,802,400 L |
-| orderbook | 90 KB | 1,414 B | 65.18x | 23 | +631,592,160 L |
-| repetitive | 256 KB | 6,793 B | 38.59x | 64 | +1,777,242,960 L (~1.8 SOL) |
-| json-like | 256 KB | 10,940 B | 23.96x | 64 | +1,748,379,840 L (~1.7 SOL) |
+| orderbook | 90 KB | 1,391 B | 66.25x | 23 | +631,752,240 L |
+| repetitive | 256 KB | 6,729 B | 38.96x | 64 | +1,777,688,400 L (~1.8 SOL) |
+| json-like | 256 KB | 10,806 B | 24.26x | 64 | +1,749,312,480 L (~1.7 SOL) |
 | pseudo-random | 256 KB | 264,073 B | 0.99x | 64 | -13,425,840 L |
-| orderbook | 256 KB | 3,950 B | 66.37x | 64 | +1,797,030,240 L (~1.8 SOL) |
-| repetitive | 512 KB | 13,577 B | 38.62x | 128 | +3,554,548,560 L (~3.6 SOL) |
-| json-like | 512 KB | 21,874 B | 23.97x | 128 | +3,496,801,440 L (~3.5 SOL) |
+| orderbook | 256 KB | 3,886 B | 67.46x | 64 | +1,797,475,680 L (~1.8 SOL) |
+| repetitive | 512 KB | 13,449 B | 38.98x | 128 | +3,555,439,440 L (~3.6 SOL) |
+| json-like | 512 KB | 21,613 B | 24.26x | 128 | +3,498,618,000 L (~3.5 SOL) |
 | pseudo-random | 512 KB | 528,137 B | 0.99x | 128 | -26,789,040 L |
-| orderbook | 512 KB | 7,890 B | 66.45x | 128 | +3,594,130,080 L (~3.6 SOL) |
-| repetitive | 1 MB | 27,145 B | 38.63x | 256 | +7,109,159,760 L (~7.1 SOL) |
-| json-like | 1 MB | 43,745 B | 23.97x | 256 | +6,993,623,760 L (~7.0 SOL) |
+| orderbook | 512 KB | 7,762 B | 67.55x | 128 | +3,595,020,960 L (~3.6 SOL) |
+| repetitive | 1 MB | 26,889 B | 39.00x | 256 | +7,110,941,520 L (~7.1 SOL) |
+| json-like | 1 MB | 43,212 B | 24.27x | 256 | +6,997,333,440 L (~7.0 SOL) |
 | pseudo-random | 1 MB | 1,056,265 B | 0.99x | 256 | -53,515,440 L |
-| orderbook | 1 MB | 15,777 B | 66.46x | 256 | +7,188,281,040 L (~7.2 SOL) |
-| repetitive | 4 MB | 108,553 B | 38.64x | 1,024 | +28,436,826,960 L (~28.4 SOL) |
-| json-like | 4 MB | 174,979 B | 23.97x | 1,024 | +27,974,502,000 L (~28.0 SOL) |
-| pseudo-random | 4 MB | 4,225,033 B | 0.99x | 1,024 | -213,873,840 L |
-| orderbook | 4 MB | 63,086 B | 66.49x | 1,024 | +28,753,277,280 L (~28.8 SOL) |
+| orderbook | 1 MB | 15,521 B | 67.56x | 256 | +7,190,062,800 L (~7.2 SOL) |
+| repetitive | 4 MB | 107,529 B | 39.01x | 1,024 | +28,443,954,000 L (~28.4 SOL) |
+| json-like | 4 MB | 172,829 B | 24.27x | 1,024 | +27,989,466,000 L (~28.0 SOL) |
+| pseudo-random | 4 MB | 4,225,032 B | 0.99x | 1,024 | -213,866,880 L |
+| orderbook | 4 MB | 62,062 B | 67.58x | 1,024 | +28,760,404,320 L (~28.8 SOL) |
 
-The 90 KB orderbook row mirrors a realistic OpenBook `BookSide` account (90 KB of raw state → 1.4 KB compressed, 65× ratio, ~0.63 SOL saved). Compression ratios plateau as chunk count grows because LZ4 already reaches maximum context within the first few chunks.
+The 90 KB orderbook row mirrors a realistic OpenBook `BookSide` account (90 KB of raw state → 1,391 B compressed, 66.25× ratio, ~0.63 SOL saved). The on-chain compression benchmark (`largeAccountDemo`) confirms this: 90,952 B → 1,386 B, compressCu=764,131 (~55% of the 1.4 M budget). Compression ratios plateau as chunk count grows because LZ4 already reaches maximum context within the first few chunks.
 
 **Chunk size vs compression ratio** — because LZ4 only back-references within the current chunk, smaller chunks mean less context. Fixed input: 90 KB orderbook:
 
 | Chunk size | Compressed | Ratio | Chunks |
 |-----------:|-----------:|------:|-------:|
-| 512 B | 8,577 B | 10.75x | 180 |
-| 1,024 B | 4,473 B | 20.60x | 90 |
-| 4,096 B | 1,414 B | 65.18x | 23 |
+| 512 B | 8,397 B | 10.98x | 180 |
+| 1,024 B | 4,383 B | 21.03x | 90 |
+| 4,096 B | 1,391 B | 66.25x | 23 |
 
 `ChunkedLz4<4096>` is the recommended default: near-maximum compression (the 80-byte pattern fills ~51× within a 4 KB chunk) while each `decompress_chunk` call uses only ~4 KB of heap.
 
@@ -176,14 +176,14 @@ The 90 KB orderbook row mirrors a realistic OpenBook `BookSide` account (90 KB o
 
 | Data type | Input | Compressed | Chunks | Read raw CU | Chunk CU | Overhead CU |
 |-----------|------:|-----------:|-------:|------------:|---------:|------------:|
-| repetitive | 1 KB | 103 B | 1 | 11,705 | 17,520 | 5,815 |
-| repetitive | 4 KB | 115 B | 1 | 42,441 | 65,272 | 22,831 |
-| json-like | 1 KB | 166 B | 1 | 11,705 | 17,480 | 5,775 |
-| json-like | 4 KB | 178 B | 1 | 42,441 | 65,232 | 22,791 |
+| repetitive | 1 KB | 102 B | 1 | 11,705 | 17,526 | 5,821 |
+| repetitive | 4 KB | 114 B | 1 | 42,441 | 65,278 | 22,837 |
+| json-like | 1 KB | 164 B | 1 | 11,705 | 17,491 | 5,786 |
+| json-like | 4 KB | 176 B | 1 | 42,441 | 65,243 | 22,802 |
 | random | 1 KB | 1,050 B | 1 | 11,709 | 12,638 | 929 |
 | random | 4 KB | 4,135 B | 1 | 42,441 | 44,857 | 2,416 |
-| orderbook | 1 KB | 57 B | 1 | 11,705 | 17,842 | 6,137 |
-| orderbook | 4 KB | 69 B | 1 | 42,437 | 65,590 | 23,153 |
+| orderbook | 1 KB | 56 B | 1 | 11,705 | 17,847 | 6,142 |
+| orderbook | 4 KB | 68 B | 1 | 42,437 | 65,595 | 23,158 |
 
 For structured data the per-chunk overhead is ~5,800–6,100 CU per 1 KB and ~22,800–23,200 CU per 4 KB chunk. The 1,400,000 CU budget can cover ~60 chunks of 1 KB or ~60 chunks of 4 KB in a single transaction — enough to scan a full 90 KB orderbook (23 × 4 KB chunks) with room to spare.
 
@@ -205,49 +205,61 @@ Measured on live mainnet accounts fetched 2026-03-21 via `getAccountInfo`.
 
 ### ChunkedLz4 — write and full-read CU
 
-> **Note:** For accounts ≤ 10 KB, prefer plain `Lz4` — it gives better compression and lower CU than `ChunkedLz4` at small sizes (the per-chunk header adds ~16 B and ~9 CU per write). The tables below are included for completeness and for cases where `ChunkedLz4` format is required at all sizes.
+> **Note:** For accounts ≤ 10 KB, prefer plain `Lz4` — it gives better compression and lower write CU than `ChunkedLz4` at small sizes. The overhead difference ranges from ~990 CU (repetitive 256 B) to ~4,250 CU (repetitive 800 B). The tables below are included for completeness and for cases where `ChunkedLz4` format is required at all sizes.
+>
+> **Why ChunkedLz4 write CU is higher:** The custom on-chain compressor allocates the LZ4 hash table (8 KB) once per `compress()` call and reuses it across all chunks, clearing between chunks. This replaces the old approach of delegating to `lz4_flex` per chunk, which stranded one hash table per chunk on the SBF bump allocator — 23 chunks × 8 KB = 188 KB for a 90 KB account. The new approach keeps peak heap at ~3 KB regardless of account size, enabling MB-scale on-chain compression. Write CU increased ~10–40%; the rent-saving break-even is unchanged.
 
 **Write (256–800 B):**
 
 | Data type | Size | Compressed | Ratio | Store raw CU | Store chunk CU | Overhead CU | Rent saving (lamports) |
 |-----------|-----:|-----------:|------:|-------------:|---------------:|------------:|-----------------------:|
-| repetitive | 256 B | 100 B | 2.56x | 4,840 | 9,809 | 4,969 | +1,085,760 |
-| repetitive | 512 B | 101 B | 5.07x | 4,840 | 10,355 | 5,515 | +2,860,560 |
-| repetitive | 800 B | 102 B | 7.84x | 4,840 | 10,898 | 6,058 | +4,858,080 |
-| json-like | 256 B | 163 B | 1.57x | 4,840 | 13,505 | 8,665 | +647,280 |
-| json-like | 512 B | 164 B | 3.12x | 4,840 | 14,017 | 9,177 | +2,422,080 |
-| json-like | 800 B | 165 B | 4.85x | 4,840 | 14,626 | 9,786 | +4,419,600 |
-| random | 256 B | 279 B | 0.92x | 4,840 | 12,057 | 7,217 | -160,080 |
-| random | 512 B | 536 B | 0.96x | 4,840 | 14,698 | 9,858 | -167,040 |
-| random | 800 B | 826 B | 0.97x | 4,840 | 16,857 | 12,017 | -180,960 |
-| orderbook | 256 B | 54 B | 4.74x | 4,840 | 8,662 | 3,822 | +1,405,920 |
-| orderbook | 512 B | 55 B | 9.31x | 4,840 | 9,208 | 4,368 | +3,180,720 |
-| orderbook | 800 B | 56 B | 14.29x | 4,840 | 9,812 | 4,972 | +5,178,240 |
+| repetitive | 256 B | 99 B | 2.59x | 4,840 | 10,789 | 5,949 | +1,092,720 |
+| repetitive | 512 B | 100 B | 5.12x | 4,840 | 12,829 | 7,989 | +2,867,520 |
+| repetitive | 800 B | 101 B | 7.92x | 4,840 | 15,148 | 10,308 | +4,865,040 |
+| json-like | 256 B | 161 B | 1.59x | 4,840 | 12,879 | 8,039 | +661,200 |
+| json-like | 512 B | 162 B | 3.16x | 4,840 | 14,942 | 10,102 | +2,436,000 |
+| json-like | 800 B | 163 B | 4.91x | 4,840 | 17,293 | 12,453 | +4,433,520 |
+| random | 256 B | 279 B | 0.92x | 4,840 | 14,525 | 9,685 | -160,080 |
+| random | 512 B | 536 B | 0.96x | 4,840 | 22,476 | 17,636 | -167,040 |
+| random | 800 B | 826 B | 0.97x | 4,840 | 31,433 | 26,593 | -180,960 |
+| orderbook | 256 B | 53 B | 4.83x | 4,840 | 9,953 | 5,113 | +1,412,880 |
+| orderbook | 512 B | 54 B | 9.48x | 4,840 | 12,016 | 7,176 | +3,187,680 |
+| orderbook | 800 B | 55 B | 14.55x | 4,840 | 14,398 | 9,558 | +5,185,200 |
 
-**Full read (256 B – 4 KB; OOMs above ~4 KB for same reason as Lz4 in-program compression):**
+**Full read (256 B – 10 KB; random data OOMs at 10 KB, all other types succeed through 10 KB):**
 
 | Data type | Size | Compressed | Ratio | Read raw CU | Read full CU | Overhead CU |
 |-----------|-----:|-----------:|------:|------------:|-------------:|------------:|
-| repetitive | 256 B | 100 B | 2.56x | 4,021 | 5,783 | 1,762 |
-| repetitive | 512 B | 101 B | 5.07x | 6,581 | 9,762 | 3,181 |
-| repetitive | 1 KB | 103 B | 9.94x | 11,705 | 17,724 | 6,019 |
-| repetitive | 2 KB | 107 B | 19.14x | 21,949 | 33,644 | 11,695 |
-| repetitive | 4 KB | 115 B | 35.62x | 42,441 | 65,482 | 23,041 |
-| json-like | 256 B | 163 B | 1.57x | 4,021 | 5,744 | 1,723 |
-| json-like | 512 B | 164 B | 3.12x | 6,581 | 9,722 | 3,141 |
-| json-like | 1 KB | 166 B | 6.17x | 11,705 | 17,684 | 5,979 |
-| json-like | 2 KB | 170 B | 12.05x | 21,949 | 33,604 | 11,655 |
-| json-like | 4 KB | 178 B | 23.01x | 42,441 | 65,442 | 23,001 |
-| random | 256 B | 279 B | 0.92x | 4,021 | 4,785 | 764 |
-| random | 512 B | 536 B | 0.96x | 6,581 | 7,468 | 887 |
-| random | 1 KB | 1,050 B | 0.98x | 11,709 | 12,846 | 1,137 |
-| random | 2 KB | 2,078 B | 0.99x | 21,949 | 23,578 | 1,629 |
-| random | 4 KB | 4,135 B | 0.99x | 42,441 | 45,071 | 2,630 |
-| orderbook | 256 B | 54 B | 4.74x | 4,010 | 6,083 | 2,073 |
-| orderbook | 512 B | 55 B | 9.31x | 6,570 | 10,062 | 3,492 |
-| orderbook | 1 KB | 57 B | 17.96x | 11,705 | 18,035 | 6,330 |
-| orderbook | 2 KB | 61 B | 33.57x | 21,945 | 33,951 | 12,006 |
-| orderbook | 4 KB | 69 B | 59.36x | 42,437 | 65,789 | 23,352 |
+| repetitive | 256 B | 99 B | 2.59x | 4,021 | 5,641 | 1,620 |
+| repetitive | 512 B | 100 B | 5.12x | 6,581 | 9,631 | 3,050 |
+| repetitive | 1 KB | 102 B | 10.04x | 11,705 | 17,593 | 5,888 |
+| repetitive | 2 KB | 106 B | 19.32x | 21,949 | 33,513 | 11,564 |
+| repetitive | 4 KB | 114 B | 35.93x | 42,441 | 65,351 | 22,910 |
+| repetitive | 8 KB | 219 B | 37.41x | 83,433 | 128,944 | 45,511 |
+| repetitive | 10 KB | 316 B | 32.41x | 103,940 | 160,710 | 56,770 |
+| json-like | 256 B | 161 B | 1.59x | 4,021 | 5,618 | 1,597 |
+| json-like | 512 B | 162 B | 3.16x | 6,581 | 9,596 | 3,015 |
+| json-like | 1 KB | 164 B | 6.24x | 11,705 | 17,558 | 5,853 |
+| json-like | 2 KB | 168 B | 12.19x | 21,949 | 33,478 | 11,529 |
+| json-like | 4 KB | 176 B | 23.27x | 42,441 | 65,316 | 22,875 |
+| json-like | 8 KB | 349 B | 23.47x | 83,433 | 128,870 | 45,437 |
+| json-like | 10 KB | 508 B | 20.16x | 103,940 | 160,609 | 56,669 |
+| random | 256 B | 279 B | 0.92x | 4,021 | 4,648 | 627 |
+| random | 512 B | 536 B | 0.96x | 6,581 | 7,331 | 750 |
+| random | 1 KB | 1,050 B | 0.98x | 11,709 | 12,709 | 1,000 |
+| random | 2 KB | 2,078 B | 0.99x | 21,949 | 23,441 | 1,492 |
+| random | 4 KB | 4,135 B | 0.99x | 42,441 | 44,934 | 2,493 |
+| random | 8 KB | 8,261 B | 0.99x | 83,444 | 88,139 | 4,695 |
+| random | 10 KB | — | 1.00x | 103,951 | OOM³ | — |
+| orderbook | 256 B | 53 B | 4.83x | 4,010 | 5,951 | 1,941 |
+| orderbook | 512 B | 54 B | 9.48x | 6,570 | 9,930 | 3,360 |
+| orderbook | 1 KB | 56 B | 18.29x | 11,705 | 17,903 | 6,198 |
+| orderbook | 2 KB | 60 B | 34.13x | 21,945 | 33,819 | 11,874 |
+| orderbook | 4 KB | 68 B | 60.24x | 42,437 | 65,657 | 23,220 |
+| orderbook | 8 KB | 124 B | 66.06x | 83,433 | 129,597 | 46,164 |
+| orderbook | 10 KB | 179 B | 57.21x | 103,940 | 161,710 | 57,770 |
+
+³ OOM on `read_chunked_full` for random 10 KB: the full decompressed output (~10 KB) plus the working buffers exceed the 32 KB heap. Use `decompress_chunk` to read individual chunks without this limit.
 
 ## Missing pieces
 
