@@ -7,6 +7,7 @@ import { FeaturesSection } from "@/components/FeaturesSection";
 import { BenchmarksSection } from "@/components/BenchmarksSection";
 import { CalculatorSection } from "@/components/CalculatorSection";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
+import { FooterSection } from "@/components/FooterSection";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -59,6 +60,7 @@ const Index = () => {
         <CalculatorSection />
         <HowItWorksSection />
       </main>
+      <FooterSection />
     </div>
     </>
   );
