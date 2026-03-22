@@ -2,7 +2,7 @@
 
 Transparent LZ4 compression for Anchor account fields. Store less data, pay less rent.
 
-> I couldn't find measured data on whether on-chain compression is worth the extra CU, so I measured it. If you spot a mistake, open an issue.
+> I couldn't find measured data on whether on-chain compression is worth the extra CU, so I measured it. If you spot a mistake, open an issue
 
 ## Use densol
 
