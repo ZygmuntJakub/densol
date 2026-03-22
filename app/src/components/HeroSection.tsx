@@ -266,25 +266,8 @@ export const HeroSection = () => (
           </a>
         </div>
       </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4"
-      >
-        {[
-          { label: "Real-world Ratio",  value: "54x",       sub: "on live OpenBook v2 mainnet accounts" },
-          { label: "Rent Saved",        value: "~0.62 SOL", sub: "per order book account"               },
-          { label: "Peak Heap",          value: "~3 KB",     sub: "with ChunkedLz4, any account size"     },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-5">
-            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
-          </div>
-        ))}
-      </motion.div>
+      {/* Add some space */}
+      <div className="h-[73px]" />
     </div>
   </section>
 );
