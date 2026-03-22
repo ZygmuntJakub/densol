@@ -276,7 +276,7 @@ export const HeroSection = () => (
         {[
           { label: "Real-world Ratio",  value: "54x",       sub: "on live OpenBook v2 mainnet accounts" },
           { label: "Rent Saved",        value: "~0.62 SOL", sub: "per order book account"               },
-          { label: "Extra Cost",        value: "$0",        sub: "at default priority fee (0 µL/CU)"    },
+          { label: "Peak Heap",          value: "~3 KB",     sub: "with ChunkedLz4, any account size"     },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-5">
             <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-1">{stat.label}</p>
