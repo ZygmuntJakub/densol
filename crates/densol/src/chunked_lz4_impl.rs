@@ -157,18 +157,21 @@ fn strip_discriminant(input: &[u8], expected: u8) -> Result<&[u8], CompressionEr
 // allocate it once and clear it between chunks (fill(0)), paying 8192 B of
 // heap exactly once instead of once per chunk.
 
-const LZ4_HASH_SIZE: usize = 4096; // must be a power of 2
+pub const LZ4_HASH_TABLE_WORDS: usize = 4096; // must be a power of 2
+const LZ4_HASH_SIZE: usize = LZ4_HASH_TABLE_WORDS;
 const LZ4_HASH_BITS: u32 = 12; // log2(LZ4_HASH_SIZE)
 const LZ4_MINMATCH: usize = 4;
 const LZ4_MFLIMIT: usize = 12; // last 12 bytes of input are always literals
 const LZ4_LASTLITERALS: usize = 5; // matches may not extend into the last 5 bytes
 
-/// Compress `input` into `out` using LZ4 block format.
+/// Compress a single LZ4 block into `out`.
 ///
-/// `table` (length == LZ4_HASH_SIZE) must be zeroed by the caller before each
-/// call; it is reused across chunks to avoid repeated heap allocation on the
-/// SBF bump allocator.
-fn lz4_compress_chunk(input: &[u8], table: &mut [u16], out: &mut Vec<u8>) {
+/// `table` must have length [`LZ4_HASH_TABLE_WORDS`] and be **zeroed** before each
+/// call. Reuse + re-zero across calls to pay the allocation cost only once.
+///
+/// Output: prepends the original chunk length as a 4-byte LE u32 (compatible
+/// with `lz4_flex::block::decompress_size_prepended`), then the LZ4 block data.
+pub fn lz4_compress_chunk(input: &[u8], table: &mut [u16], out: &mut Vec<u8>) {
     debug_assert_eq!(table.len(), LZ4_HASH_SIZE);
 
     // Prepend original chunk length (lz4_flex's "size-prepended" wire format).

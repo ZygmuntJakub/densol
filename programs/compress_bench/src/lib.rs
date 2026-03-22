@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 #[cfg(feature = "chunked_lz4")]
-use densol::ChunkedLz4;
+use densol::{ChunkedLz4, lz4_compress_chunk, LZ4_HASH_TABLE_WORDS};
 use densol::{Compress, Compressor};
 
 declare_id!("AwLfrSLLSDht8b59VmyVhLGSg5vgdKyWMseKQpjSohKM");
@@ -360,11 +360,199 @@ pub mod compress_bench {
             data[12..12 + comp_len].copy_from_slice(&compressed);
         }
 
+        // Return excess rent to the payer now that the account has shrunk.
+        let excess = info.lamports().saturating_sub(rent.minimum_balance(new_len));
+        if excess > 0 {
+            **info.try_borrow_mut_lamports()? -= excess;
+            **ctx.accounts.payer.try_borrow_mut_lamports()? += excess;
+        }
+
         msg!(
             "compress_stored_chunked_large raw={} compressed={} ratio={:.2}x",
             raw_len,
             comp_len,
             raw_len as f64 / comp_len as f64,
+        );
+        Ok(())
+    }
+
+    // ── Multi-transaction in-place compression ─────────────────────────────────
+    //
+    // For accounts larger than the single-tx CU ceiling (~163 KB), compress in
+    // multiple transactions:
+    //
+    //   1. compress_large_init()                      — writes ChunkedLz4 header + index,
+    //                                                    processes "dangerous" chunks (those
+    //                                                    overwritten by the header region)
+    //   2. compress_large_batch(first, n, write_off)  — processes n raw chunks per tx (≤40)
+    //   3. compress_large_finalize(comp_len)           — resizes account to final size
+    //
+    // Safety invariant: write_ptr < read_ptr at all times.
+    // The compressed output grows by ~compressed_chunk_size per chunk (<<4096),
+    // while the read pointer advances by 4096 bytes per chunk, so they never collide.
+    //
+    // Account layout during compression (payload, starting at byte 12):
+    //   [0x02 disc][chunk_count: u32 LE][original_len: u32 LE]
+    //   [index: chunk_count × 8B]  ← (data_offset: u32, compressed_len: u32) per chunk
+    //   [data region: lz4 blocks]
+
+    /// Step 1: write ChunkedLz4 header + zero index, compress "dangerous" chunks
+    /// (the first ceil((9 + chunk_count*8) / 4096) raw chunks whose raw bytes would
+    /// be overwritten by the index region).  Returns write_offset via log.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn compress_large_init(ctx: Context<CompressStoredLarge>) -> Result<()> {
+        let raw_len: usize;
+        let chunk_count: usize;
+        let dangerous_count: usize;
+        let mut compressed_dangerous: Vec<Vec<u8>> = Vec::new();
+
+        {
+            let data = ctx.accounts.store.data.borrow();
+            require!(data.len() >= 12, BenchError::CompressFailed);
+            raw_len = u32::from_le_bytes(data[8..12].try_into().unwrap()) as usize;
+            chunk_count = raw_len.div_ceil(4096);
+            // header: 1 (disc) + 4 (count) + 4 (orig_len) + chunk_count*8 (index)
+            let header_len = 9 + chunk_count * 8;
+            dangerous_count = header_len.div_ceil(4096);
+
+            let mut table = vec![0u16; LZ4_HASH_TABLE_WORDS];
+            for i in 0..dangerous_count.min(chunk_count) {
+                let start = 12 + i * 4096;
+                let end = (12 + (i + 1) * 4096).min(12 + raw_len);
+                let mut out = Vec::new();
+                lz4_compress_chunk(&data[start..end], &mut table, &mut out);
+                table.fill(0);
+                compressed_dangerous.push(out);
+            }
+        }
+
+        let write_offset: u32;
+        {
+            let mut data = ctx.accounts.store.data.borrow_mut();
+            let p = 12usize;
+            data[p] = 0x02; // ChunkedLz4 discriminant
+            data[p + 1..p + 5].copy_from_slice(&(chunk_count as u32).to_le_bytes());
+            data[p + 5..p + 9].copy_from_slice(&(raw_len as u32).to_le_bytes());
+            // zero-fill index
+            for b in data[p + 9..p + 9 + chunk_count * 8].iter_mut() {
+                *b = 0;
+            }
+
+            let data_region_start = p + 9 + chunk_count * 8;
+            let mut wp = data_region_start;
+            let mut data_offset: u32 = 0;
+
+            for (i, comp) in compressed_dangerous.iter().enumerate() {
+                data[wp..wp + comp.len()].copy_from_slice(comp);
+                wp += comp.len();
+                let entry = p + 9 + i * 8;
+                data[entry..entry + 4].copy_from_slice(&data_offset.to_le_bytes());
+                data[entry + 4..entry + 8].copy_from_slice(&(comp.len() as u32).to_le_bytes());
+                data_offset += comp.len() as u32;
+            }
+            write_offset = wp as u32;
+        }
+
+        msg!(
+            "compress_large_init chunk_count={} dangerous={} write_offset={}",
+            chunk_count, dangerous_count, write_offset
+        );
+        Ok(())
+    }
+
+    /// Step 2: compress `num_chunks` raw 4096-byte chunks starting at `first_raw_chunk`,
+    /// writing compressed output at `write_offset` in the account.
+    /// Returns new write_offset via log.  Call repeatedly until all chunks are processed.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn compress_large_batch(
+        ctx: Context<CompressStoredLarge>,
+        first_raw_chunk: u32,
+        num_chunks: u32,
+        write_offset: u32,
+    ) -> Result<()> {
+        let first = first_raw_chunk as usize;
+        let n = num_chunks as usize;
+        let raw_len: usize;
+        let chunk_count: usize;
+        let mut compressed_chunks: Vec<Vec<u8>> = Vec::new();
+
+        {
+            let data = ctx.accounts.store.data.borrow();
+            raw_len = u32::from_le_bytes(data[8..12].try_into().unwrap()) as usize;
+            chunk_count = raw_len.div_ceil(4096);
+            let last = (first + n).min(chunk_count);
+
+            let mut table = vec![0u16; LZ4_HASH_TABLE_WORDS];
+            for i in first..last {
+                let start = 12 + i * 4096;
+                let end = (12 + (i + 1) * 4096).min(12 + raw_len);
+                let mut out = Vec::new();
+                lz4_compress_chunk(&data[start..end], &mut table, &mut out);
+                table.fill(0);
+                compressed_chunks.push(out);
+            }
+        }
+
+        let new_write_offset: u32;
+        {
+            let mut data = ctx.accounts.store.data.borrow_mut();
+            let p = 12usize;
+            let data_region_start = p + 9 + chunk_count * 8;
+            let mut wp = write_offset as usize;
+            let mut data_offset = (wp - data_region_start) as u32;
+
+            for (k, comp) in compressed_chunks.iter().enumerate() {
+                data[wp..wp + comp.len()].copy_from_slice(comp);
+                wp += comp.len();
+                let i = first + k;
+                let entry = p + 9 + i * 8;
+                data[entry..entry + 4].copy_from_slice(&data_offset.to_le_bytes());
+                data[entry + 4..entry + 8].copy_from_slice(&(comp.len() as u32).to_le_bytes());
+                data_offset += comp.len() as u32;
+            }
+            new_write_offset = wp as u32;
+        }
+
+        msg!(
+            "compress_large_batch first={} n={} new_write_offset={}",
+            first_raw_chunk, compressed_chunks.len(), new_write_offset
+        );
+        Ok(())
+    }
+
+    /// Step 3: resize account to compressed size and update the stored length.
+    #[cfg(feature = "chunked_lz4")]
+    pub fn compress_large_finalize(
+        ctx: Context<CompressStoredLarge>,
+        total_compressed_len: u32,
+    ) -> Result<()> {
+        let comp_len = total_compressed_len as usize;
+        let new_account_len = 8 + 4 + comp_len;
+
+        let info = ctx.accounts.store.to_account_info();
+        let rent = Rent::get()?;
+        let needed = rent.minimum_balance(new_account_len);
+        let current = info.lamports();
+        if needed > current {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: info.clone(),
+                    },
+                ),
+                needed - current,
+            )?;
+        }
+        info.resize(new_account_len)?;
+        {
+            let mut data = ctx.accounts.store.data.borrow_mut();
+            data[8..12].copy_from_slice(&(comp_len as u32).to_le_bytes());
+        }
+        msg!(
+            "compress_large_finalize comp_len={} account_size={}",
+            comp_len, new_account_len
         );
         Ok(())
     }

@@ -170,6 +170,20 @@ The 90 KB orderbook row mirrors a realistic OpenBook `BookSide` account (90 KB o
 
 `ChunkedLz4<4096>` is the recommended default: near-maximum compression (the 80-byte pattern fills ~51× within a 4 KB chunk) while each `decompress_chunk` call uses only ~4 KB of heap.
 
+### ChunkedLz4 — on-chain compression CU (single-tx and multi-tx)
+
+**Single-transaction ceiling:** `compressStoredChunkedLarge` processes up to ~163,840 bytes (40 × 4,096-byte chunks) in one transaction — ~34,572 CU/chunk, 1,382,886 CU total — within the 1,400,000 CU budget. 172,032 bytes (42 chunks) exceeds the limit and fails. Data pattern: orderbook (worst case — maximum chunks filled, so maximum CU).
+
+**Multi-transaction compression** (`compressLargeInit` / `compressLargeBatch` / `compressLargeFinalize`) removes the per-tx ceiling. The init instruction pre-reads any "dangerous" raw chunks that would be overwritten by the header, then writes the ChunkedLz4 header. Each batch call compresses up to 38 chunks (~1.33M CU/tx). Finalize truncates the account to the compressed length.
+
+On-chain measured results — orderbook-pattern data, localnet, 2026-03-22:
+
+| Account size | Compressed | Ratio | Total CU | Transactions | Rent saved |
+|-------------:|-----------:|------:|---------:|-------------:|-----------:|
+| 1 MB (256 chunks) | 15,881 B | **66.03×** | 9,020,117 | **9** | ~7.19 SOL |
+
+CU breakdown for 1 MB: 1 init + 7 batches of 38 chunks + 1 finalize = 9 transactions, ~34,996 CU/chunk in batch mode (~1.25% higher than single-tx due to per-chunk `Vec` allocation overhead).
+
 ### ChunkedLz4 — per-chunk read CU
 
 > **What this benchmark measures:** The test accounts are 1–4 KB, which fit in exactly one 4 KB chunk (`ceil(1024/4096) = ceil(4096/4096) = 1`). The table shows the cost of decompressing *one chunk*. For multi-chunk accounts, this cost is paid once per chunk you access, independent of total account size. A 90 KB account has 23 chunks; reading one of them costs the same CU as shown here for 4 KB.

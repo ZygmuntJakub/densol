@@ -106,7 +106,7 @@ pub use lz4_impl::Lz4;
 #[cfg(feature = "chunked_lz4")]
 mod chunked_lz4_impl;
 #[cfg(feature = "chunked_lz4")]
-pub use chunked_lz4_impl::ChunkedLz4;
+pub use chunked_lz4_impl::{ChunkedLz4, lz4_compress_chunk, LZ4_HASH_TABLE_WORDS};
 
 // ── Derive re-export ──────────────────────────────────────────────────────────
 
