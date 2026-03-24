@@ -3,6 +3,7 @@
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "drift:bench": "yarn ts-mocha -p ./tsconfig.json -t 300000 benchmark/drift/benchmark.ts",
     "demo": "ts-node --transpile-only demo/run.ts",
     "demo:setup": "ts-node --transpile-only demo/run.ts setup",
     "demo:read": "ts-node --transpile-only demo/run.ts read",
