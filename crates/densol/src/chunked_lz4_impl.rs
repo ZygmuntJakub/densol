@@ -249,11 +249,6 @@ pub fn lz4_compress_chunk(input: &[u8], table: &mut [u16], out: &mut Vec<u8>) {
     lz4_push_lits(out, &input[anchor..]);
 }
 
-#[inline(always)]
-fn lz4_read4(data: &[u8], pos: usize) -> u32 {
-    u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
-}
-
 /// Unchecked 4-byte LE read — caller must ensure `pos + 3 < data.len()`.
 #[inline(always)]
 unsafe fn lz4_read4_unc(data: &[u8], pos: usize) -> u32 {

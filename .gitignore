@@ -8,3 +8,4 @@ test-ledger
 .yarn
 /private
 /demo
+benchmark/*/results/

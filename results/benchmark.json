@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-22T10:24:00.417Z",
+  "timestamp": "2026-03-26T12:41:41.416Z",
   "config": {
     "priorityFeeUlamports": 1000
   },
@@ -977,7 +977,7 @@
     "rawSize": 90952,
     "compSize": 1386,
     "chunkCount": 23,
-    "compCu": 764131,
+    "compCu": 764537,
     "chunkCu": 65595
   },
   "heapCeiling": [
