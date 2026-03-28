@@ -1,12 +1,13 @@
 [package]
 name = "densol"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 description = "Compression strategy trait + SBF-compatible implementations for Solana programs"
 license = "Apache-2.0"
 repository = "https://github.com/ZygmuntJakub/densol"
 homepage = "https://densol.dev"
+documentation = "https://docs.rs/densol"
 readme = "../../README.md"
 keywords = ["solana", "compression", "lz4", "sbf", "anchor"]
 categories = ["compression", "no-std", "wasm"]
@@ -20,7 +21,7 @@ std          = []
 derive       = ["dep:densol-derive"]
 
 [dependencies]
-lz4_flex      = { version = "0.11", default-features = false, optional = true }
+lz4_flex      = { version = "0.11.6", default-features = false, optional = true }
 densol-derive = { version = "0.1", path = "../densol-derive", optional = true }
 
 [lints.rust]

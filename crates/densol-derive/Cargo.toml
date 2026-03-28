@@ -7,6 +7,7 @@ description = "Derive macro for densol: #[derive(Compress)]"
 license = "Apache-2.0"
 repository = "https://github.com/ZygmuntJakub/densol"
 homepage = "https://densol.dev"
+documentation = "https://docs.rs/densol-derive"
 readme = "../../README.md"
 keywords = ["solana", "compression", "anchor", "derive", "macro"]
 categories = ["compression", "development-tools::procedural-macro-helpers"]
