@@ -108,6 +108,11 @@ mod chunked_lz4_impl;
 #[cfg(feature = "chunked_lz4")]
 pub use chunked_lz4_impl::{ChunkedLz4, lz4_compress_chunk, LZ4_HASH_TABLE_WORDS};
 
+#[cfg(feature = "lz4_huffman")]
+mod lz4_huffman_impl;
+#[cfg(feature = "lz4_huffman")]
+pub use lz4_huffman_impl::Lz4Huffman;
+
 // ── Derive re-export ──────────────────────────────────────────────────────────
 
 #[cfg(feature = "derive")]
